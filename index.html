@@ -2,63 +2,57 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Screen Share via GitHub Pages</title>
+<title>Live Screen Broadcast</title>
 <style>
 body { font-family:sans-serif; background:#111; color:#fff; text-align:center; padding:20px;}
-video { width:45%; margin:10px; border:2px solid #0f0;}
-#videos { display:flex; justify-content:center; flex-wrap:wrap;}
-input, button { padding:10px; font-size:16px; margin:5px;}
+video { width:80%; border:2px solid #0f0; margin:20px auto; display:block;}
+h2 { color:#0f0; }
+button { padding:10px 20px; font-size:16px; margin:10px; }
 </style>
 </head>
 <body>
-<h2>Screen Share via GitHub Pages</h2>
-<label>Enter 5-digit code:</label>
-<input id="room" maxlength="5" placeholder="12345">
-<button id="joinBtn">Join / Start</button>
-
-<div id="videos">
-  <div>
-    <h4>Local Screen</h4>
-    <video id="local" autoplay muted></video>
-  </div>
-  <div>
-    <h4>Remote Screen</h4>
-    <video id="remote" autoplay></video>
-  </div>
-</div>
+<h2>Live Screen Broadcast</h2>
+<button id="startBtn">Start Broadcasting</button>
+<video id="local" autoplay muted></video>
+<video id="remote" autoplay></video>
 
 <script src="https://unpkg.com/simple-peer@9.12.0/simplepeer.min.js"></script>
 <script>
+let peer;
 const localVideo = document.getElementById('local');
 const remoteVideo = document.getElementById('remote');
-const joinBtn = document.getElementById('joinBtn');
-let peer;
-let ws;
+const startBtn = document.getElementById('startBtn');
 
-function generateCode() {
-  return Math.floor(10000 + Math.random() * 90000).toString();
-}
+// Free cloud signaling using wss://signaling.simple-peerjs.com
+const SIGNAL_SERVER = 'wss://signaling.simple-peerjs.com';
 
-joinBtn.onclick = async () => {
-  let room = document.getElementById('room').value;
-  if (!room) room = generateCode(), alert("Your room code: " + room);
-
-  ws = new WebSocket('wss://signaling.simple-peerjs.com');
-
-  ws.onopen = () => ws.send(JSON.stringify({ type:'join', room }));
-
-  ws.onmessage = (msg) => {
-    const data = JSON.parse(msg.data);
-    if (data.type === 'signal' && peer) peer.signal(data.signal);
-  };
+startBtn.onclick = async () => {
+  startBtn.disabled = true;
 
   const stream = await navigator.mediaDevices.getDisplayMedia({ video:true, audio:true });
   localVideo.srcObject = stream;
 
+  // Connect to signaling server
+  const ws = new WebSocket(SIGNAL_SERVER);
+
+  ws.onopen = () => {
+    console.log("Connected to signaling server");
+  };
+
+  ws.onmessage = msg => {
+    const data = JSON.parse(msg.data);
+    if (data.type === 'signal' && peer) peer.signal(data.signal);
+  };
+
+  // Create a Simple-Peer
   peer = new SimplePeer({ initiator:true, trickle:false, stream });
 
-  peer.on('signal', signal => ws.send(JSON.stringify({ type:'signal', signal, room })));
-  peer.on('stream', remoteStream => remoteVideo.srcObject = remoteStream);
+  peer.on('signal', signal => ws.send(JSON.stringify({ type:'signal', signal })));
+  peer.on('stream', remoteStream => {
+    remoteVideo.srcObject = remoteStream;
+  });
+
+  alert("Your screen is now broadcasting. Anyone opening this page will see it automatically.");
 };
 </script>
 </body>
