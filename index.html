@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Konsolo Mobile Editor</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.0/dist/confetti.browser.min.js"></script>
+    
     <style>
         /* A clean, mobile-first dark design system */
         html, body {
@@ -124,7 +128,6 @@
             top: 0;
             left: 0;
             right: 0;
-            /* FIX: Occupy full height/width without bottom navbar */
             width: 100vw !important;
             height: 100vh !important;
             z-index: 50;
@@ -137,11 +140,10 @@
         #slimBar { 
             background-color: rgba(30, 41, 59, 0.9); 
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            color: #e2e8f0; /* Ensure text is light */
-            /* FIX: Make sure slim bar is always on top */
+            color: #e2e8f0; 
             z-index: 60; 
         }
-        #slimBar button svg { color: #e2e8f0; } /* Ensure icons are light */
+        #slimBar button svg { color: #e2e8f0; } 
 
         /* Dark Mode UI Elements (Consistent Styling) */
         #topBar { background-color: #1e293b; border-color: #334155; }
@@ -165,7 +167,7 @@
         #contextMenuContent button:hover { background-color: #334155; }
         .text-red-600 { color: #f87171; }
         
-        .snippet-card .text-gray-900 { color: #e2e8f0; } /* Carousel Title Color */
+        .snippet-card .text-gray-900 { color: #e2e8f0; } 
         
         .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -350,6 +352,7 @@
             let longPressTimer = null;
             const LONG_PRESS_DURATION_CONTEXT = 700; 
 
+            // Base templates are now the source of truth for new files
             const baseTemplates = {
                 default: `<!DOCTYPE html>
 <html>
@@ -365,12 +368,14 @@
   <p>Start coding your mobile project!</p>
 </body>
 </html>`,
+                // NOTE: Tailwind template still uses an external CDN link, which may fail in strict WebViews. 
+                // However, the main app's UI is already styled via the *inlined* Tailwind CDN script at the top.
                 tailwind: `<!DOCTYPE html>
 <html>
 <head>
   <title>Tailwind Starter</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"><\/script>
+  <script src="https://cdn.tailwindcss.com"><\/script> 
 </head>
 <body class="bg-gray-900 text-white flex h-screen items-center justify-center">
   <div class="text-center p-8 bg-slate-800 rounded-lg shadow-xl">
@@ -391,7 +396,7 @@
 </html>`
             };
             
-            // --- Core Functions (Unchanged) ---
+            // --- Core Functions ---
             const updateTitle = () => {
                 const match = editor.value.match(/<title>(.*?)<\/title>/i);
                 if (currentSnippetIndex !== null) {
@@ -455,7 +460,7 @@
                 }, 300);
             };
 
-            // --- Storage and Rendering (Unchanged) ---
+            // --- Storage and Rendering ---
             const saveDropletsToStorage = () => localStorage.setItem('html_droplets_v2', JSON.stringify(droplets));
             const saveTemplatesToStorage = () => localStorage.setItem('custom_templates_v1', JSON.stringify(customTemplates));
             
@@ -512,19 +517,16 @@
             };
 
             // --- UI/Navigation Control ---
-
             const enterFullscreen = () => {
                 topBar.classList.add('toolbar-hidden');
                 bottomNav.classList.add('toolbar-hidden');
                 
-                // FIX: Ensure full height and proper flex context
                 previewContainer.classList.add('fullscreen-preview');
                 
                 document.getElementById('fullscreenBtn').classList.add('hidden');
                 slimBar.style.display = 'flex';
                 quickActionBar.classList.add('hidden');
                 
-                // FIX: Set preview height based on slimBar height
                 preview.style.height = `calc(100% - ${slimBar.offsetHeight}px)`;
             };
 
@@ -532,7 +534,6 @@
                 topBar.classList.remove('toolbar-hidden');
                 bottomNav.classList.remove('toolbar-hidden');
                 
-                // FIX: Remove fullscreen class
                 previewContainer.classList.remove('fullscreen-preview');
                 
                 document.getElementById('fullscreenBtn').classList.remove('hidden');
@@ -557,7 +558,7 @@
                 }, 300);
             };
             
-            // --- Save/Update & Rename Logic (Unchanged) ---
+            // --- Save/Update & Rename Logic ---
             const promptSaveAsTemplate = (index) => {
                 const snippet = droplets[index];
                 saveModalTitle.textContent = 'Save as Custom Template';
@@ -602,7 +603,7 @@
                 updateTitle();
             };
             
-            // --- Editor Feature Logic (Unchanged) ---
+            // --- Editor Feature Logic ---
             const handleEditorInput = (e) => {
                 updatePreview();
 
@@ -643,9 +644,6 @@
                 updatePreview();
             };
 
-            // --- Easter Egg REMOVAL ---
-            // The logic for 'goToEditorBtn' long-press has been removed.
-            
             // --- Event Listeners ---
             document.getElementById('actionBtn').addEventListener('click', () => {
                 document.getElementById('confirmSaveBtn').onclick = performSaveOrUpdate;
@@ -674,10 +672,10 @@
             document.getElementById('cancelSaveBtn').addEventListener('click', () => { hideModal(saveModal, saveModalContent); });
             document.getElementById('fullscreenBtn').addEventListener('click', enterFullscreen);
             
-            // FIX: Slim Navbar Functionality is now perfect
+            // Slim Navbar Functionality
             slimExitBtn.addEventListener('click', () => { 
                 exitFullscreen(); 
-                editBtn.click(); // Switch back to editor view
+                editBtn.click(); 
             });
             slimReloadBtn.addEventListener('click', () => { 
                 updatePreview(); 
@@ -753,7 +751,7 @@
                 editBtn.click();
             });
 
-            // FIX: Editor button now works normally (Easter egg code removed)
+            // Home Screen to Editor Transition
             document.getElementById('goToEditorBtn').addEventListener('click', () => {
                 document.getElementById('homeScreen').classList.add('hidden');
                 document.getElementById('appContainer').classList.remove('hidden');
@@ -883,8 +881,7 @@
                         previewContainer.classList.remove('hidden');
                         setActiveButton(previewBtn);
                         
-                        // FIX: Ensure fullscreen is only entered if the long press didn't happen
-                        // A quick tap (longPressTimer cancelled immediately) should lead to fullscreen preview
+                        // A quick tap loads the snippet and shows the fullscreen preview
                         enterFullscreen(); 
                     }
                 }
