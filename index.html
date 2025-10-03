@@ -2,922 +2,996 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Konsolo Mobile Editor</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.0/dist/confetti.browser.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noteworthy: Cloud Notes App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     
     <style>
-        /* A clean, mobile-first dark design system */
-        html, body {
-            overscroll-behavior: none;
-            font-family: 'Inter', sans-serif;
-            color: #e2e8f0; /* Light text for dark background */
-            background-color: #0f172a; /* Slate 900 */
-            transition: background-color 0.3s ease;
-        }
+        /* ========================================================================= */
+        /* --- COPY/PASTE THE ENTIRE CSS BLOCK FROM THE PREVIOUS RESPONSE HERE --- */
+        /* ========================================================================= */
         :root {
-            --accent-color: #f97316;
-        }
-        
-        /* EDITOR CORE STYLING */
-        #editor {
-            font-family: 'Fira Code', monospace;
-            tab-size: 2;
-            line-height: 1.5rem;
-            -webkit-text-size-adjust: 100%;
-            background-color: #1e293b; /* Slate 800 */
-            color: #e2e8f0;
-            caret-color: #f97316;
-            transition: all 0.3s ease;
-            width: 100%; 
-            height: 100%;
-            padding: 1rem;
-            resize: none;
-            border: 0;
-            outline: none;
-        }
-        
-        /* Quick Action Bar Styling */
-        #quickActionBar {
-            background-color: #334155; /* Slate 700 */
-            border-top: 1px solid #475569;
-        }
-        .quick-action-btn {
-            background-color: #475569; /* Slate 600 */
-            color: #f8fafc;
-        }
-        .quick-action-btn:active {
-            background-color: #64748b; /* Slate 500 */
+            /* Color Palette: Modern and Clean */
+            --color-bg-light: #f4f6f9; /* Off-white, airy background */
+            --color-paper-light: #ffffff;
+            --color-text-light: #181c20;
+            --color-accent: #2e7d32; /* Deep Green for a calming, focused feel */
+            --color-accent-hover: #1b5e20;
+            --color-sidebar-bg-light: #e9ecef;
+            --color-secondary-text: #6c757d;
+            
+            --color-bg-dark: #121212; /* True black */
+            --color-paper-dark: #1e1e1e; /* Dark gray for notes */
+            --color-text-dark: #f0f0f0;
+            --color-sidebar-bg-dark: #2c2c2c;
+            
+            --border-radius: 8px;
+            --padding-lg: 20px;
+            --transition-time: 0.3s;
         }
 
-        /* PANEL TRANSITIONS */
-        .panel-enter-active {
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 300ms ease-out, transform 300ms ease-out;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color var(--transition-time), color var(--transition-time), border-color var(--transition-time), box-shadow var(--transition-time); 
         }
-        .panel-exit-active {
-            opacity: 0;
-            transform: translateY(100%);
-            transition: opacity 300ms ease-in, transform 300ms ease-in;
+
+        /* --- MODE VARIABLES --- */
+        .light-mode {
+            --color-bg: var(--color-bg-light);
+            --color-paper: var(--color-paper-light);
+            --color-text: var(--color-text-light);
+            --color-sidebar-bg: var(--color-sidebar-bg-light);
         }
-        
-        /* --- Snippet Carousel Styling --- */
-        #dropletsList {
-            overflow-x: scroll;
-            scroll-snap-type: x mandatory;
-            padding: 1rem 0; 
-            align-items: stretch;
-            height: 100%; 
+
+        .dark-mode {
+            --color-bg: var(--color-bg-dark);
+            --color-paper: var(--color-paper-dark);
+            --color-text: var(--color-text-dark);
+            --color-sidebar-bg: var(--color-sidebar-bg-dark);
+        }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            height: 100vh;
             display: flex;
-        }
-        .snippet-card-wrapper {
-            scroll-snap-align: center;
-            max-height: 85vh; 
-            margin-left: 1rem; 
-            flex-shrink: 0; 
-            width: 80vw;
-            max-width: 320px;
-            height: 100%; 
-            display: flex;
-        }
-        .snippet-card-wrapper:last-child {
-            margin-right: 1rem; 
-        }
-        .snippet-card {
-            height: 100%;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            background-color: #1e293b; /* Dark Card Background */
-            border-color: #f97316;
-        }
-        .snippet-card-preview {
-            width: 100%;
-            padding-bottom: 75%; 
-            position: relative; 
             overflow: hidden;
-            flex-shrink: 0; 
-            background-color: white; 
-            border-top: 1px solid #334155; 
+            align-items: center;
+            justify-content: center;
         }
-        .snippet-card-preview iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 200%;
-            transform: scale(0.5) translate(-25%, -25%); 
-            transform-origin: top left;
-            pointer-events: none;
-            background-color: white;
-        }
-        /* --- Snippet Carousel Styling END --- */
 
-        .toolbar-btn.active { color: var(--accent-color); }
-        .toolbar-btn { color: #64748b; }
-        .fullscreen-preview { 
+        #app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+        }
+
+        /* --- HOME SCREEN (AUTH) STYLES --- */
+        #auth-screen {
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            width: 100vw !important;
-            height: 100vh !important;
-            z-index: 50;
-            display: flex !important; 
+            width: 100%;
+            height: 100%;
+            background-color: var(--color-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
+        }
+
+        .auth-container {
+            background: var(--color-paper);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
+        }
+
+        .auth-container h1 {
+            font-size: 3em;
+            color: var(--color-accent);
+            margin-bottom: 30px;
+            font-weight: 800;
+        }
+
+        .auth-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--color-sidebar-bg);
+            border-radius: var(--border-radius);
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .auth-button:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .google-auth {
+            background-color: var(--color-paper);
+            color: var(--color-text);
+        }
+        .google-auth i {
+            color: #db4437; /* Google red */
+            margin-right: 10px;
+        }
+
+        .email-auth {
+            background-color: var(--color-accent);
+            color: white;
+            border-color: var(--color-accent);
+        }
+        .email-auth i {
+            margin-right: 10px;
+        }
+
+        .separator {
+            margin: 20px 0;
+            color: var(--color-secondary-text);
+            position: relative;
+        }
+        .separator::before, .separator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: var(--color-sidebar-bg);
+        }
+        .separator::before { left: 0; }
+        .separator::after { right: 0; }
+        
+        /* Limited Account Hint */
+        .limited-hint {
+            font-size: 0.9em;
+            color: var(--color-secondary-text);
+            margin-top: -10px;
+            margin-bottom: 20px;
+        }
+
+
+        /* --- MAIN APP STYLES (Keep from previous version, adapted for hidden state) --- */
+        #sidebar {
+            width: 320px;
+            background-color: var(--color-sidebar-bg);
+            border-right: 1px solid var(--color-bg);
+            display: flex;
+            flex-direction: column;
+            padding: var(--padding-lg);
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--padding-lg);
+        }
+
+        .sidebar-header h2 {
+            font-weight: 700;
+            color: var(--color-accent);
+        }
+        
+        #toggle-mode, .sidebar-action-btn {
+            background: var(--color-accent);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        #toggle-mode:hover, .sidebar-action-btn:hover {
+            background: var(--color-accent-hover);
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background-color: var(--color-paper);
+            border-radius: var(--border-radius);
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border: 1px solid transparent;
+        }
+        .search-box:focus-within {
+             border-color: var(--color-accent);
+        }
+        .search-box input {
+            flex-grow: 1;
+            border: none;
+            background: transparent;
+            color: var(--color-text);
+            outline: none;
+            margin-left: 10px;
+        }
+        .search-box i { color: var(--color-secondary-text); }
+        .search-box:focus-within i { color: var(--color-accent); }
+
+        #notes-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .note-item {
+            padding: 12px 15px; 
+            margin-bottom: 8px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            background-color: transparent;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .note-item:hover {
+            background-color: var(--color-paper);
+        }
+        .note-item.active {
+            background-color: var(--color-paper);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--color-accent);
+        }
+        .note-item h4 {
+            font-size: 17px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .note-item small {
+            display: block;
+            font-size: 12px;
+            color: var(--color-secondary-text);
+        }
+        .sidebar-footer {
+            display: flex;
+            justify-content: space-around;
+            padding-top: 10px;
+            margin-top: 10px;
+            border-top: 1px solid var(--color-bg);
+        }
+        .sidebar-footer button {
+            background: none;
+            border: none;
+            color: var(--color-text);
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 5px;
+        }
+        .sidebar-footer button:hover {
+            color: var(--color-accent);
+        }
+
+
+        #main-content {
+            flex-grow: 1;
+            padding: var(--padding-lg) 0; 
+            display: flex;
+            flex-direction: column;
+            background-color: var(--color-paper);
+            position: relative;
+            overflow-y: auto; 
+        }
+
+        #editor-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 0 var(--padding-lg) var(--padding-lg) var(--padding-lg);
+            margin-bottom: var(--padding-lg);
+            border-bottom: 1px solid var(--color-sidebar-bg);
+            position: sticky;
+            top: 0;
+            background: var(--color-paper);
+            z-index: 10;
+        }
+
+        .format-buttons button, .export-actions button, #lock-note-btn, #focus-mode-btn {
+            background: none;
+            border: none;
+            color: var(--color-text);
+            padding: 8px;
+            margin-right: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .format-buttons button:hover, .export-actions button:hover, #lock-note-btn:hover, #focus-mode-btn:hover {
+            background-color: var(--color-sidebar-bg);
+            color: var(--color-accent);
+        }
+
+        #tag-input, #export-format-select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--color-sidebar-bg);
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            margin-left: 5px;
+            transition: all 0.2s;
+        }
+        #tag-input:focus, #export-format-select:focus {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
+        }
+        
+        .note-editor-container {
+            max-width: 800px; 
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 var(--padding-lg);
+            flex-grow: 1;
+            display: flex;
             flex-direction: column;
         }
-        .toolbar-hidden { display: none !important; }
-        
-        /* Slim Bar Visibility and Style */
-        #slimBar { 
-            background-color: rgba(30, 41, 59, 0.9); 
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            color: #e2e8f0; 
-            z-index: 60; 
-        }
-        #slimBar button svg { color: #e2e8f0; } 
 
-        /* Dark Mode UI Elements (Consistent Styling) */
-        #topBar { background-color: #1e293b; border-color: #334155; }
-        #bottomNav { background-color: rgba(30, 41, 59, 0.9); border-color: #334155; }
-        #homeScreen .bg-white { background-color: #1e293b; color: #e2e8f0; }
-        .code-snippet-box { background-color: #0f172a; border: 1px solid #334155; }
-        #homeScreen button { color: #e2e8f0; }
-        #goToDropletsBtn { background-color: #334155; }
-        #goToDropletsBtn:hover { background-color: #475569; }
-        
-        #dropletsPanel { background-color: #0f172a; }
-        #dropletsPanel header { border-color: #334155; }
-        #dropletsPanel button { color: #e2e8f0; }
-        #templateSelect { background-color: #334155; border-color: #475569; color: #e2e8f0; }
-        #loadTemplateBtn { background-color: #f97316; color: white; }
-        
-        #saveModalContent { background-color: #1e293b; }
-        #snippetTitleInput { background-color: #334155; border-color: #475569; color: #e2e8f0; }
-        #contextMenuContent { background-color: #1e293b; }
-        #contextMenuContent button { color: #e2e8f0; }
-        #contextMenuContent button:hover { background-color: #334155; }
-        .text-red-600 { color: #f87171; }
-        
-        .snippet-card .text-gray-900 { color: #e2e8f0; } 
-        
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #64748b; border-radius: 3px; }
+        #note-title {
+            font-size: 2.5em;
+            font-weight: 700;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--color-text);
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        #editor-body {
+            flex-grow: 1;
+            outline: none;
+            font-size: 1.1em;
+            line-height: 1.7;
+            padding-bottom: 50px;
+            min-height: 50vh;
+            /* Fluidic Typing Animation/Focus Effect */
+            transition: box-shadow 0.5s ease-out; 
+            border-radius: 4px;
+        }
+        #editor-body:focus {
+             box-shadow: 0 0 0 1px var(--color-accent);
+        }
+
+        [contenteditable="true"]:empty:before {
+            content: attr(data-placeholder);
+            color: var(--color-secondary-text);
+        }
+
+        .tag-chip {
+            display: inline-block;
+            background-color: var(--color-accent);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 13px;
+            margin-right: 6px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            opacity: 0.9;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .tag-chip:hover { 
+            opacity: 1; 
+            transform: translateY(-1px);
+        }
+
+        /* Quick Action Menu */
+        #quick-action-menu {
+            position: absolute;
+            background: var(--color-paper);
+            border: 1px solid var(--color-sidebar-bg);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            border-radius: var(--border-radius);
+            z-index: 1000;
+            padding: 5px;
+            width: 250px;
+        }
+        .quick-action-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .quick-action-item:hover {
+            background: var(--color-sidebar-bg);
+            color: var(--color-accent);
+        }
+
+        /* Focus Mode */
+        #focus-mode-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--color-paper);
+            z-index: 2000;
+            padding: 50px;
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #focus-content {
+            max-width: 900px;
+            width: 100%;
+            font-size: 1.3em;
+            line-height: 1.8;
+            padding-top: 50px;
+            outline: none;
+            transition: box-shadow 0.5s ease-out; 
+        }
+        #focus-content:focus {
+            box-shadow: 0 0 0 1px var(--color-accent);
+        }
+
+        #exit-focus-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: var(--color-accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col overflow-hidden antialiased">
+<body class="light-mode">
+    
+    <div id="auth-screen">
+        <div class="auth-container">
+            <h1>Noteworthy</h1>
+            <p style="margin-bottom: 25px; color: var(--color-secondary-text);">A modern, focused cloud note-taking experience.</p>
 
-    <div id="homeScreen" class="h-full w-full flex flex-col items-center justify-center p-8 text-center transition-all duration-300">
-        <div class="mb-10 w-full max-w-sm p-6 bg-white rounded-xl shadow-2xl transition-all duration-300">
-            <h1 class="text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">Konsolo</h1>
-            <p class="mt-2 text-xl font-medium text-gray-700">Code Snippets on the Go.</p>
-            
-            <div class="code-snippet-box p-3 mt-6 text-left text-xs font-mono select-none overflow-x-auto rounded-lg">
-                <span class="text-orange-400">&lt;div</span> <span class="text-cyan-400">class</span>=<span class="text-yellow-400">"konsolo-app"</span><span class="text-orange-400">&gt;</span><br>
-                <span class="text-slate-500 ml-3">// Write your HTML here</span><br>
-                <span class="text-orange-400 ml-3">&lt;h1&gt;</span>Hello Mobile Coder<span class="text-orange-400">&lt;/h1&gt;</span><br>
-                <span class="text-orange-400">&lt;/div&gt;</span>
-            </div>
-            
-            <div class="w-full space-y-4 mt-8">
-                <button id="goToEditorBtn" class="w-full bg-orange-500 text-white font-semibold py-4 rounded-lg shadow-xl shadow-orange-500/30 hover:bg-orange-600 focus:outline-none focus:ring-4 focus:ring-orange-500/50 transition-all text-lg">
-                    Launch Editor
-                </button>
-                <button id="goToDropletsBtn" class="w-full bg-gray-200 text-gray-800 font-semibold py-4 rounded-lg hover:bg-gray-300 transition-all text-lg">
-                    View Snippets
-                </button>
-            </div>
+            <button class="auth-button google-auth" id="google-sign-in-btn">
+                <i class="fab fa-google"></i> Sign in with Google
+            </button>
+
+            <div class="separator">OR</div>
+
+            <button class="auth-button email-auth" id="email-sign-in-btn">
+                <i class="fas fa-envelope"></i> Sign in with Email/Password
+            </button>
+            <p class="limited-hint">Email accounts require setup in the full app version.</p>
         </div>
     </div>
 
-    <div id="appContainer" class="h-full w-full flex-col hidden transition-all duration-300">
-        <header id="topBar" class="flex-shrink-0 z-10 p-3 border-b flex items-center justify-between transition-all duration-300">
-            <button id="homeBtn" class="p-2 rounded-md hover:bg-gray-700 transition-colors">
-                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            </button>
-            <h1 id="titleDisplay" class="text-base font-bold truncate px-2 text-gray-200">Konsolo Editor</h1>
-            <button id="actionBtn" class="text-sm font-semibold bg-orange-500 text-white px-3 py-1.5 rounded-md hover:bg-orange-600 transition-colors">Save</button>
-        </header>
-        
-        <div id="quickActionBar" class="flex-shrink-0 w-full flex justify-start overflow-x-auto p-1.5 whitespace-nowrap hidden">
-            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">&lt;</button>
-            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">&gt;</button>
-            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">/</button>
-            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">&amp;</button>
-            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">:</button>
-            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">;</button>
-            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">|</button>
-            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">Tab</button>
-            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">"</button>
-            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">'</button>
-            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">{</button>
-            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">(</button>
-        </div>
+    <div id="app-container" class="hidden">
+        <aside id="sidebar">
+            <div class="sidebar-header">
+                <h2>Noteworthy</h2>
+                <button id="toggle-mode" title="Toggle Light/Dark Mode"><i class="fas fa-moon"></i></button>
+            </div>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Search notes (e.g., 'locked', #tag)">
+            </div>
+            <div id="tag-chips-container">
+                </div>
+            <button id="add-note-btn" class="sidebar-action-btn"><i class="fas fa-plus"></i> New Note</button>
+            <div id="notes-list">
+                </div>
+            <div class="sidebar-footer">
+                <button id="import-btn" title="Import Backup"><i class="fas fa-file-import"></i> Import</button>
+                <button id="export-backup-btn" title="Export Backup"><i class="fas fa-file-export"></i> Export</button>
+                <button id="sign-out-btn" title="Sign Out"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+                <input type="file" id="file-input" accept=".json" style="display: none;">
+            </div>
+        </aside>
 
-        <main class="flex-grow relative overflow-hidden pb-16">
-            <div id="editorWrapper" class="h-full">
-                <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+        <main id="main-content">
+            <div id="editor-toolbar">
+                <div class="format-buttons">
+                    <button data-action="bold" title="Bold (Ctrl+B)"><i class="fas fa-bold"></i></button>
+                    <button data-action="italic" title="Italic (Ctrl+I)"><i class="fas fa-italic"></i></button>
+                    <button data-action="underline" title="Underline (Ctrl+U)"><i class="fas fa-underline"></i></button>
+                    <button data-action="formatBlock" data-value="H1" title="Heading 1"><i class="fas fa-heading"></i></button>
+                    <button data-action="insertUnorderedList" title="Bullet List"><i class="fas fa-list-ul"></i></button>
+                    <button id="focus-mode-btn" title="Focus Mode (Full Screen)"><i class="fas fa-arrows-alt-h"></i></button>
+                </div>
+                <div class="export-actions">
+                    <input type="text" id="tag-input" placeholder="Add tags (comma-separated)" title="Add tags to the note">
+                    <button id="lock-note-btn" title="Toggle Lock"><i class="fas fa-lock-open"></i></button>
+                    <select id="export-format-select" title="Select export format">
+                        <option value="txt">TXT</option>
+                        <option value="html">HTML</option>
+                        <option value="md">Markdown</option>
+                        <option value="doc">Word (.doc)</option>
+                    </select>
+                    <button id="export-note-btn" title="Export Note"><i class="fas fa-download"></i></button>
+                    <button id="delete-note-btn" title="Delete Note"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+
+            <div class="note-editor-container">
+                <input type="text" id="note-title" placeholder="Untitled Note" autocomplete="off" disabled>
+                <div id="editor-body" contenteditable="true" data-placeholder="Start typing or use '/' for quick actions..." disabled></div>
             </div>
             
-            <div id="previewContainer" class="w-full h-full bg-white hidden relative">
-                <iframe id="preview" class="w-full h-full" sandbox="allow-scripts allow-same-origin"></iframe>
-                <button id="fullscreenBtn" class="absolute top-2 right-2 p-2 bg-gray-800/70 backdrop-blur rounded-md shadow hover:bg-gray-700 transition-all z-20">
-                    <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5v4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"></path></svg>
-                </button>
+            <div id="quick-action-menu" class="hidden">
+                <div class="quick-action-item" data-action="insertUnorderedList"><i class="fas fa-list-ul"></i> Bullet List</div>
+                <div class="quick-action-item" data-action="insertOrderedList"><i class="fas fa-list-ol"></i> Numbered List</div>
+                <div class="quick-action-item" data-action="insertHTML" data-value='<label><input type="checkbox"> Checklist Item</label><br>'><i class="fas fa-check-square"></i> Checklist</div>
+                <div class="quick-action-item" data-action="formatBlock" data-value="H2"><i class="fas fa-heading"></i> Heading 2</div>
+            </div>
+
+            <div id="focus-mode-overlay">
+                <button id="exit-focus-btn"><i class="fas fa-compress-alt"></i> Exit Focus Mode</button>
+                <div id="focus-content" contenteditable="true"></div>
             </div>
         </main>
-
-        <nav id="bottomNav" class="fixed bottom-0 left-0 right-0 backdrop-blur-sm border-t flex justify-around items-center z-30 transition-all duration-300">
-            <button id="editBtn" class="toolbar-btn flex-1 p-2 text-center active transition-colors">
-                <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-                <span class="text-xs font-medium mt-1">Editor</span>
-            </button>
-            <button id="previewBtn" class="toolbar-btn flex-1 p-2 text-center transition-colors">
-                <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                <span class="text-xs font-medium mt-1">Preview</span>
-            </button>
-            <button id="dropletsBtn" class="toolbar-btn flex-1 p-2 text-center transition-colors">
-                <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
-                <span class="text-xs font-medium mt-1">Snippets</span>
-            </button>
-        </nav>
     </div>
 
-    <nav id="slimBar" class="fixed bottom-0 left-0 right-0 h-9 flex items-center justify-between px-4 text-xs font-medium z-55" style="display:none;">
-        <button id="slimExitBtn" class="flex items-center space-x-1 py-1 px-2 rounded hover:bg-gray-700 transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span>Exit</span>
-        </button>
-        <button id="slimReloadBtn" class="py-1 px-2 rounded hover:bg-gray-700 transition-colors">Reload</button>
-    </nav>
+    <script type="module">
+        // ====================================================================
+        // --- FIREBASE IMPORTS (REQUIRED TO USE AUTH AND FIRESTORE) ---
+        // We use the full CDN URLs here for a single-file solution
+        // ====================================================================
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            getDoc,
+            setDoc,
+            updateDoc,
+            deleteDoc,
+            query,
+            orderBy,
+            onSnapshot,
+            serverTimestamp 
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    <div id="dropletsPanel" class="fixed inset-0 z-40 transform translate-y-full opacity-0 flex flex-col transition-all duration-300 ease-in-out">
-        <header class="p-4 border-b flex-shrink-0 flex items-center justify-between gap-4">
-            <h2 class="text-lg font-bold">Your Konsolo Snippets</h2>
-             <div class="flex items-center gap-2">
-                <button id="importBtn" class="text-sm font-semibold px-3 py-1.5 rounded-md hover:bg-gray-700 transition-colors">Import</button>
-                <input type="file" id="importFile" accept=".kkode" class="hidden">
-                <button id="newDropletBtn" class="text-sm font-semibold text-orange-400 px-3 py-1.5 rounded-md hover:bg-gray-700 transition-colors">New</button>
-                <button id="closeDropletsBtn" class="text-gray-400 hover:text-gray-200 text-2xl transition-colors">&times;</button>
-            </div>
-        </header>
-        <div id="dropletsList" class="flex-grow overflow-x-auto p-4 custom-scrollbar flex items-stretch gap-4">
-            </div>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAj47-dmo2gfYkb4rh9lMJD5bQasTSKLlg",
+            authDomain: "noteworthy-e76c3.firebaseapp.com",
+            projectId: "noteworthy-e76c3",
+            storageBucket: "noteworthy-e76c3.firebasestorage.app",
+            messagingSenderId: "1022385392171",
+            appId: "1:1022385392171:web:65f42981d87eed1603786e",
+            measurementId: "G-3XNLP4S080"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app); // For analytics tracking
         
-        <div class="flex-shrink-0 p-4 border-t bg-gray-800">
-            <label for="templateSelect" class="block text-sm font-medium text-gray-400 mb-2">Start from a Template:</label>
-            <select id="templateSelect" class="w-full px-3 py-2 border rounded-md focus:ring-orange-500 focus:border-orange-500 transition-colors">
-                <option value="default">Default Konsolo</option>
-                <option value="tailwind">Tailwind CSS Starter</option>
-                <option value="skeleton">Minimal HTML Skeleton</option>
-                </select>
-            <button id="loadTemplateBtn" class="w-full mt-3 font-semibold py-2 rounded-md transition-colors">Load Template into Editor</button>
-        </div>
-    </div>
-    
-    <div id="saveModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 hidden items-center justify-center p-4">
-        <div id="saveModalContent" class="rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4 transform scale-95 opacity-0 transition-all duration-300">
-            <h3 id="saveModalTitle" class="text-lg font-bold">Save Current Snippet</h3>
-            <input type="text" id="snippetTitleInput" placeholder="Snippet Title (e.g., 'Hero Section')" class="w-full px-4 py-2 border rounded-md focus:ring-orange-500 focus:border-orange-500 transition-colors">
-            <div class="flex justify-end space-x-3">
-                <button id="cancelSaveBtn" class="px-4 py-2 text-gray-400 hover:bg-gray-700 rounded-md transition-colors">Cancel</button>
-                <button id="confirmSaveBtn" class="px-4 py-2 bg-orange-500 text-white font-semibold rounded-md hover:bg-orange-600 transition-colors">Save Snippet</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="contextMenuModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 hidden items-center justify-center p-4">
-        <div id="contextMenuContent" class="rounded-lg shadow-xl w-full max-w-xs p-2 transform scale-95 opacity-0 transition-all duration-300">
-            <h3 class="text-sm font-semibold text-gray-400 p-2 border-b border-gray-700">Snippet Options</h3>
-            <button id="contextLoadBtn" data-index="" class="w-full text-left p-3 flex items-center space-x-2 hover:bg-gray-700 rounded-md transition-colors">Load into Editor</button>
-            <button id="contextRenameBtn" data-index="" class="w-full text-left p-3 flex items-center space-x-2 hover:bg-gray-700 rounded-md transition-colors">Rename Snippet</button>
-            <button id="contextAsTemplateBtn" data-index="" class="w-full text-left p-3 flex items-center space-x-2 text-green-400 hover:bg-gray-700 rounded-md transition-colors">Save as Template</button>
-            <button id="contextExportBtn" data-index="" class="w-full text-left p-3 flex items-center space-x-2 hover:bg-gray-700 rounded-md transition-colors">Export (.kkode)</button>
-            <button id="contextDeleteBtn" data-index="" class="w-full text-left p-3 flex items-center space-x-2 text-red-600 hover:bg-gray-700 rounded-md transition-colors">Delete Snippet</button>
-        </div>
-    </div>
+        // Initialize Auth and Firestore services
+        const auth = getAuth(app); 
+        const db = getFirestore(app); 
 
-    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-gray-800 text-white py-2 px-5 rounded-full shadow-lg text-sm opacity-0 transition-all duration-200 z-50">
-        Snippet saved!
-    </div>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- DOM Elements & State ---
-            const editor = document.getElementById('editor');
-            const editorWrapper = document.getElementById('editorWrapper');
-            const preview = document.getElementById('preview');
-            const previewContainer = document.getElementById('previewContainer');
-            const dropletsPanel = document.getElementById('dropletsPanel');
-            const dropletsList = document.getElementById('dropletsList');
-            const toast = document.getElementById('toast');
-            const topBar = document.getElementById('topBar');
-            const bottomNav = document.getElementById('bottomNav');
-            const slimBar = document.getElementById('slimBar'); 
-            const quickActionBar = document.getElementById('quickActionBar');
-            const titleDisplay = document.getElementById('titleDisplay');
-            const loadTemplateBtn = document.getElementById('loadTemplateBtn');
-            const templateSelect = document.getElementById('templateSelect');
-            const goToEditorBtn = document.getElementById('goToEditorBtn');
+        // ====================================================================
+        // --- APP STATE VARIABLES ---
+        // ====================================================================
+        const LOCAL_STORAGE_KEY = 'noteworthy_data';
+        let notes = [];
+        let activeNoteId = null;
+        let currentUser = null; // Holds the Firebase User object
 
-            // Modals
-            const saveModal = document.getElementById('saveModal');
-            const saveModalContent = document.getElementById('saveModalContent');
-            const saveModalTitle = document.getElementById('saveModalTitle');
-            const snippetTitleInput = document.getElementById('snippetTitleInput');
-            const contextMenuModal = document.getElementById('contextMenuModal');
-            const contextMenuContent = document.getElementById('contextMenuContent');
+        // DOM Elements
+        const body = document.body;
+        const authScreen = document.getElementById('auth-screen');
+        const appContainer = document.getElementById('app-container');
+        const notesList = document.getElementById('notes-list');
+        const noteTitleInput = document.getElementById('note-title');
+        const editorBody = document.getElementById('editor-body');
+        const searchInput = document.getElementById('search-input');
+        const toggleModeBtn = document.getElementById('toggle-mode');
+        const tagInput = document.getElementById('tag-input');
+        const tagChipsContainer = document.getElementById('tag-chips-container');
+        const lockNoteBtn = document.getElementById('lock-note-btn');
+        const focusOverlay = document.getElementById('focus-mode-overlay');
+        const focusContent = document.getElementById('focus-content');
+        const quickActionMenu = document.getElementById('quick-action-menu');
 
-            // Buttons
-            const actionBtn = document.getElementById('actionBtn'); 
-            const editBtn = document.getElementById('editBtn');
-            const previewBtn = document.getElementById('previewBtn');
-            const dropletsBtn = document.getElementById('dropletsBtn');
-            const slimExitBtn = document.getElementById('slimExitBtn'); 
-            const slimReloadBtn = document.getElementById('slimReloadBtn'); 
-            const navButtons = [editBtn, previewBtn, dropletsBtn];
+        // ====================================================================
+        // --- AUTHENTICATION FLOW ---
+        // ====================================================================
 
-            let droplets = [];
-            let customTemplates = [];
-            let currentSnippetIndex = null; 
-            let longPressTimer = null;
-            const LONG_PRESS_DURATION_CONTEXT = 700; 
-
-            // Base templates are now the source of truth for new files
-            const baseTemplates = {
-                default: `<!DOCTYPE html>
-<html>
-<head>
-  <title>Default Konsolo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: sans-serif; background-color: #f0f0f0; color: #333; padding: 20px;}
-  </style>
-</head>
-<body>
-  <h1>Hello Mobile Coder</h1>
-  <p>Start coding your mobile project!</p>
-</body>
-</html>`,
-                // NOTE: Tailwind template still uses an external CDN link, which may fail in strict WebViews. 
-                // However, the main app's UI is already styled via the *inlined* Tailwind CDN script at the top.
-                tailwind: `<!DOCTYPE html>
-<html>
-<head>
-  <title>Tailwind Starter</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"><\/script> 
-</head>
-<body class="bg-gray-900 text-white flex h-screen items-center justify-center">
-  <div class="text-center p-8 bg-slate-800 rounded-lg shadow-xl">
-    <h1 class="text-5xl font-extrabold text-teal-400">Tailwind Droplet</h1>
-    <p class="mt-4 text-lg">A responsive, functional snippet.</p>
-    <button class="mt-6 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded">Click Me</button>
-  </div>
-</body>
-</html>`,
-                skeleton: `<!DOCTYPE html>
-<html>
-<head>
-  <title>Minimal Skeleton</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body>
-  </body>
-</html>`
-            };
-            
-            // --- Core Functions ---
-            const updateTitle = () => {
-                const match = editor.value.match(/<title>(.*?)<\/title>/i);
-                if (currentSnippetIndex !== null) {
-                    titleDisplay.textContent = droplets[currentSnippetIndex].title;
-                } else if (match && match[1].trim()) {
-                    titleDisplay.textContent = match[1].trim();
-                } else {
-                    titleDisplay.textContent = 'Untitled Snippet';
-                }
-            };
-
-            const updatePreview = () => { 
-                preview.srcdoc = editor.value; 
-                updateTitle(); 
-            };
-
-            const setActiveButton = (activeBtn) => {
-                navButtons.forEach(btn => {
-                    btn.classList.remove('active');
+        document.getElementById('google-sign-in-btn').addEventListener('click', () => {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider)
+                .catch((error) => {
+                    alert("Google sign-in failed: " + error.message);
                 });
-                activeBtn.classList.add('active');
-            };
-
-            const updateActionButton = () => {
-                const isUpdate = currentSnippetIndex !== null;
-                actionBtn.textContent = isUpdate ? 'Update' : 'Save';
-                actionBtn.classList.toggle('bg-green-600', isUpdate);
-                actionBtn.classList.toggle('hover:bg-green-700', isUpdate);
-                actionBtn.classList.toggle('bg-orange-500', !isUpdate);
-                actionBtn.classList.toggle('hover:bg-orange-600', !isUpdate);
-            };
-            
-            const showToast = (message) => {
-                toast.textContent = message;
-                toast.classList.add('toast-enter-active');
-                toast.classList.remove('opacity-0', 'toast-exit-active');
-
-                setTimeout(() => {
-                    toast.classList.remove('toast-enter-active');
-                    toast.classList.add('toast-exit-active');
-                    setTimeout(() => {
-                        toast.classList.add('opacity-0');
-                    }, 200);
-                }, 2000);
-            };
-
-            const showModal = (modal, content) => {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                setTimeout(() => {
-                    content.classList.remove('scale-95', 'opacity-0');
-                }, 10);
-            };
-
-            const hideModal = (modal, content, callback) => {
-                content.classList.add('scale-95', 'opacity-0');
-                setTimeout(() => {
-                    modal.classList.remove('flex');
-                    modal.classList.add('hidden');
-                    if(callback) callback();
-                }, 300);
-            };
-
-            // --- Storage and Rendering ---
-            const saveDropletsToStorage = () => localStorage.setItem('html_droplets_v2', JSON.stringify(droplets));
-            const saveTemplatesToStorage = () => localStorage.setItem('custom_templates_v1', JSON.stringify(customTemplates));
-            
-            const loadDropletsFromStorage = () => {
-                const data = localStorage.getItem('html_droplets_v2');
-                droplets = data ? JSON.parse(data) : [];
-                droplets.forEach((d, i) => {
-                    if (!d.title) d.title = `Untitled Snippet #${droplets.length - i}`;
-                });
-            };
-
-            const loadTemplatesFromStorage = () => {
-                const data = localStorage.getItem('custom_templates_v1');
-                customTemplates = data ? JSON.parse(data) : [];
-            };
-
-            const renderTemplateOptions = () => {
-                const existingOptions = templateSelect.querySelectorAll('option:not([value="default"]):not([value="tailwind"]):not([value="skeleton"])');
-                existingOptions.forEach(opt => opt.remove());
-
-                customTemplates.forEach((template, index) => {
-                    const opt = document.createElement('option');
-                    opt.value = `custom_${index}`;
-                    opt.textContent = `[Template] ${template.title}`;
-                    templateSelect.appendChild(opt);
-                });
-            };
-            
-            const renderDroplets = () => {
-                dropletsList.innerHTML = '';
-                if (droplets.length === 0) {
-                    dropletsList.innerHTML = `<p class="text-gray-500 text-center p-4 w-full">No snippets saved yet. Tap 'New' or load a template!</p>`;
-                    return;
-                }
-                
-                [...droplets].reverse().forEach((droplet, reversedIndex) => {
-                    const originalIndex = droplets.length - 1 - reversedIndex;
-                    const el = document.createElement('div');
-                    el.className = 'snippet-card-wrapper flex-shrink-0 w-[80%] sm:w-80 h-full cursor-pointer snap-center';
-                    
-                    el.innerHTML = `
-                        <div data-index="${originalIndex}" class="snippet-card h-full rounded-xl shadow-xl border-t-4 overflow-hidden flex flex-col transition-all duration-300 hover:scale-[1.02]">
-                            <div class="p-3 flex-shrink-0">
-                                <p class="font-bold text-base truncate text-gray-200">${droplet.title}</p>
-                                <p class="text-xs text-gray-500 mt-1">${new Date(droplet.id).toLocaleDateString()}</p>
-                            </div>
-                            <div class="flex-grow snippet-card-preview">
-                                <iframe srcdoc="${droplet.html.replace(/"/g, '&quot;')}" class="w-full h-full border-0 bg-white"></iframe>
-                            </div>
-                        </div>
-                    `;
-                    dropletsList.appendChild(el);
-                });
-            };
-
-            // --- UI/Navigation Control ---
-            const enterFullscreen = () => {
-                topBar.classList.add('toolbar-hidden');
-                bottomNav.classList.add('toolbar-hidden');
-                
-                previewContainer.classList.add('fullscreen-preview');
-                
-                document.getElementById('fullscreenBtn').classList.add('hidden');
-                slimBar.style.display = 'flex';
-                quickActionBar.classList.add('hidden');
-                
-                preview.style.height = `calc(100% - ${slimBar.offsetHeight}px)`;
-            };
-
-            const exitFullscreen = () => {
-                topBar.classList.remove('toolbar-hidden');
-                bottomNav.classList.remove('toolbar-hidden');
-                
-                previewContainer.classList.remove('fullscreen-preview');
-                
-                document.getElementById('fullscreenBtn').classList.remove('hidden');
-                slimBar.style.display = 'none';
-                preview.style.height = '100%';
-            };
-            
-            const showDroplets = () => {
-                renderDroplets();
-                renderTemplateOptions();
-                dropletsPanel.classList.remove('translate-y-full', 'opacity-0', 'panel-exit-active');
-                dropletsPanel.classList.add('panel-enter-active');
-                exitFullscreen();
-            };
-            
-            const hideDroplets = () => {
-                dropletsPanel.classList.remove('panel-enter-active');
-                dropletsPanel.classList.add('panel-exit-active');
-                setTimeout(() => {
-                    dropletsPanel.classList.add('translate-y-full', 'opacity-0');
-                    dropletsPanel.classList.remove('panel-exit-active');
-                }, 300);
-            };
-            
-            // --- Save/Update & Rename Logic ---
-            const promptSaveAsTemplate = (index) => {
-                const snippet = droplets[index];
-                saveModalTitle.textContent = 'Save as Custom Template';
-                snippetTitleInput.value = snippet.title;
-                showModal(saveModal, saveModalContent);
-                
-                document.getElementById('confirmSaveBtn').textContent = "Save Template";
-                document.getElementById('confirmSaveBtn').onclick = () => {
-                    const templateTitle = snippetTitleInput.value.trim() || `Untitled Template`;
-                    customTemplates.push({ id: Date.now(), title: templateTitle, html: snippet.html });
-                    saveTemplatesToStorage();
-                    hideModal(saveModal, saveModalContent, () => {
-                        showToast(`Saved '${templateTitle}' as a new template!`);
-                        renderTemplateOptions();
-                    });
-                    
-                    document.getElementById('confirmSaveBtn').onclick = performSaveOrUpdate;
-                    document.getElementById('confirmSaveBtn').textContent = (currentSnippetIndex !== null) ? "Update Snippet" : "Save Snippet";
-                };
-            };
-
-            const performSaveOrUpdate = () => {
-                const code = editor.value.trim();
-                const title = snippetTitleInput.value.trim() || `Untitled Snippet`;
-
-                if (currentSnippetIndex !== null) {
-                    droplets[currentSnippetIndex].title = title;
-                    droplets[currentSnippetIndex].html = code;
-                    saveDropletsToStorage();
-                    hideModal(saveModal, saveModalContent, () => {
-                        showToast(`'${title}' updated.`);
-                    });
-                } else {
-                    droplets.unshift({ id: Date.now(), title: title, html: code });
-                    currentSnippetIndex = 0; 
-                    saveDropletsToStorage();
-                    hideModal(saveModal, saveModalContent, () => {
-                        showToast(`'${title}' saved!`);
-                    });
-                }
-                updateActionButton();
-                updateTitle();
-            };
-            
-            // --- Editor Feature Logic ---
-            const handleEditorInput = (e) => {
-                updatePreview();
-
-                const text = editor.value;
-                const caretPos = editor.selectionStart;
-
-                const autoCloseMap = {
-                    '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '<': '>'
-                };
-
-                const lastChar = text.substring(caretPos - 1, caretPos);
-                if (autoCloseMap[lastChar] && text.substring(caretPos, caretPos + 1) !== autoCloseMap[lastChar]) {
-                    const closingChar = autoCloseMap[lastChar];
-                    editor.value = text.substring(0, caretPos) + closingChar + text.substring(caretPos);
-                    editor.selectionStart = editor.selectionEnd = caretPos;
-                }
-            };
-            
-            const handleQuickAction = (char) => {
-                const start = editor.selectionStart;
-                const end = editor.selectionEnd;
-                let newText = char;
-                let newPos = start + newText.length;
-                
-                if (char === 'Tab') {
-                    newText = '  '; 
-                } else if (char === '&') {
-                    newText = '&amp;';
-                    newPos = start + 1; 
-                } else if (char === '<') {
-                    newText = '<>'; 
-                    newPos = start + 1;
-                }
-
-                editor.value = editor.value.substring(0, start) + newText + editor.value.substring(end);
-                editor.selectionStart = editor.selectionEnd = newPos;
-                editor.focus();
-                updatePreview();
-            };
-
-            // --- Event Listeners ---
-            document.getElementById('actionBtn').addEventListener('click', () => {
-                document.getElementById('confirmSaveBtn').onclick = performSaveOrUpdate;
-                document.getElementById('confirmSaveBtn').textContent = (currentSnippetIndex !== null) ? "Update Snippet" : "Save Snippet";
-                
-                const code = editor.value.trim();
-                if (!code) {
-                    showToast('Editor is empty! Cannot save or update.');
-                    return;
-                }
-                
-                const isUpdate = currentSnippetIndex !== null;
-                saveModalTitle.textContent = isUpdate ? 'Update Snippet' : 'Save New Snippet';
-                
-                if (isUpdate) {
-                    snippetTitleInput.value = droplets[currentSnippetIndex].title;
-                } else {
-                    const defaultTitle = editor.value.match(/<title>(.*?)<\/title>/i)
-                        ? editor.value.match(/<title>(.*?)<\/title>/i)[1].trim()
-                        : `New Snippet ${droplets.length + 1}`;
-                    snippetTitleInput.value = defaultTitle;
-                }
-                showModal(saveModal, saveModalContent);
-            });
-            
-            document.getElementById('cancelSaveBtn').addEventListener('click', () => { hideModal(saveModal, saveModalContent); });
-            document.getElementById('fullscreenBtn').addEventListener('click', enterFullscreen);
-            
-            // Slim Navbar Functionality
-            slimExitBtn.addEventListener('click', () => { 
-                exitFullscreen(); 
-                editBtn.click(); 
-            });
-            slimReloadBtn.addEventListener('click', () => { 
-                updatePreview(); 
-                showToast('Preview Reloaded'); 
-            });
-
-            document.getElementById('closeDropletsBtn').addEventListener('click', hideDroplets);
-
-            editor.addEventListener('input', handleEditorInput);
-            
-            editor.addEventListener('focus', () => quickActionBar.classList.remove('hidden'));
-            editor.addEventListener('blur', () => {
-                if (saveModal.classList.contains('hidden') && contextMenuModal.classList.contains('hidden')) {
-                    setTimeout(() => quickActionBar.classList.add('hidden'), 100); 
-                }
-            });
-            
-            quickActionBar.querySelectorAll('button').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault(); 
-                    handleQuickAction(e.target.textContent);
-                });
-            });
-            
-            loadTemplateBtn.addEventListener('click', () => {
-                const templateKey = templateSelect.value;
-                
-                let htmlToLoad;
-                if (baseTemplates[templateKey]) {
-                    htmlToLoad = baseTemplates[templateKey];
-                } else if (templateKey.startsWith('custom_')) {
-                    const index = parseInt(templateKey.split('_')[1]);
-                    htmlToLoad = customTemplates[index].html;
-                }
-
-                editor.value = htmlToLoad;
-                currentSnippetIndex = null;
-                updatePreview();
-                updateActionButton();
-                hideDroplets();
-                editBtn.click();
-                showToast('Template loaded.');
-            });
-
-            // --- Navigation Handlers ---
-            document.getElementById('editBtn').addEventListener('click', () => {
-                exitFullscreen();
-                editorWrapper.classList.remove('hidden');
-                previewContainer.classList.add('hidden');
-                setActiveButton(editBtn);
-            });
-            
-            document.getElementById('previewBtn').addEventListener('click', () => {
-                exitFullscreen();
-                updatePreview();
-                editorWrapper.classList.add('hidden');
-                previewContainer.classList.remove('hidden');
-                setActiveButton(previewBtn);
-            });
-            
-            document.getElementById('dropletsBtn').addEventListener('click', () => {
-                hideModal(contextMenuModal, contextMenuContent);
-                showDroplets();
-                setActiveButton(dropletsBtn);
-            });
-            
-            document.getElementById('newDropletBtn').addEventListener('click', () => {
-                editor.value = baseTemplates.default;
-                currentSnippetIndex = null;
-                updatePreview();
-                updateActionButton();
-                hideDroplets();
-                editBtn.click();
-            });
-
-            // Home Screen to Editor Transition
-            document.getElementById('goToEditorBtn').addEventListener('click', () => {
-                document.getElementById('homeScreen').classList.add('hidden');
-                document.getElementById('appContainer').classList.remove('hidden');
-                document.getElementById('appContainer').classList.add('flex');
-                editBtn.click(); 
-            });
-            
-            document.getElementById('goToDropletsBtn').addEventListener('click', () => {
-                document.getElementById('homeScreen').classList.add('hidden');
-                document.getElementById('appContainer').classList.remove('hidden');
-                document.getElementById('appContainer').classList.add('flex');
-                showDroplets();
-                setActiveButton(dropletsBtn);
-            });
-            
-            document.getElementById('homeBtn').addEventListener('click', () => {
-                document.getElementById('homeScreen').classList.remove('hidden');
-                document.getElementById('appContainer').classList.add('hidden');
-                document.getElementById('appContainer').classList.remove('flex');
-                exitFullscreen();
-            });
-            
-            // --- Context Menu Handlers (Tap/Long Press) ---
-            document.getElementById('contextLoadBtn').addEventListener('click', (e) => {
-                const index = parseInt(e.currentTarget.dataset.index);
-                editor.value = droplets[index].html;
-                currentSnippetIndex = index;
-                updatePreview();
-                updateActionButton();
-                hideModal(contextMenuModal, contextMenuContent);
-                hideDroplets();
-                editBtn.click(); 
-                showToast(`Loaded '${droplets[index].title}'`);
-            });
-            document.getElementById('contextRenameBtn').addEventListener('click', (e) => {
-                const index = parseInt(e.currentTarget.dataset.index);
-                const snippet = droplets[index];
-                saveModalTitle.textContent = 'Rename Snippet';
-                snippetTitleInput.value = snippet.title;
-                showModal(saveModal, saveModalContent);
-                
-                document.getElementById('confirmSaveBtn').textContent = "Confirm Rename";
-                document.getElementById('confirmSaveBtn').onclick = () => {
-                    const newTitle = snippetTitleInput.value.trim() || `Untitled Snippet`;
-                    droplets[index].title = newTitle;
-                    saveDropletsToStorage();
-                    hideModal(saveModal, saveModalContent, () => {
-                        showToast(`Snippet renamed to '${newTitle}'`);
-                        renderDroplets();
-                        if (currentSnippetIndex === index) updateTitle();
-                    });
-                    document.getElementById('confirmSaveBtn').onclick = performSaveOrUpdate;
-                    document.getElementById('confirmSaveBtn').textContent = (currentSnippetIndex !== null) ? "Update Snippet" : "Save Snippet";
-                };
-                hideModal(contextMenuModal, contextMenuContent);
-            });
-            
-            document.getElementById('contextAsTemplateBtn').addEventListener('click', (e) => {
-                const index = parseInt(e.currentTarget.dataset.index);
-                hideModal(contextMenuModal, contextMenuContent, () => promptSaveAsTemplate(index));
-            });
-
-            document.getElementById('contextDeleteBtn').addEventListener('click', (e) => {
-                const index = parseInt(e.currentTarget.dataset.index);
-                const title = droplets[index].title;
-                droplets.splice(index, 1);
-                saveDropletsToStorage();
-                
-                if (currentSnippetIndex === index) {
-                    editor.value = baseTemplates.default;
-                    currentSnippetIndex = null;
-                    updatePreview();
-                    updateActionButton();
-                } else if (currentSnippetIndex !== null && currentSnippetIndex > index) {
-                    currentSnippetIndex--;
-                }
-
-                hideModal(contextMenuModal, contextMenuContent, () => {
-                    showToast(`Deleted snippet '${title}'`);
-                    renderDroplets();
-                });
-            });
-
-            // Droplets Card Interaction (Tap/Long Press)
-            dropletsList.addEventListener('mousedown', handleCardStart);
-            dropletsList.addEventListener('touchstart', handleCardStart);
-            dropletsList.addEventListener('mouseup', handleCardEnd);
-            dropletsList.addEventListener('touchend', handleCardEnd);
-            
-            function handleCardStart(e) {
-                const card = e.target.closest('.snippet-card');
-                if (card) {
-                    e.preventDefault();
-                    const index = parseInt(card.dataset.index);
-                    longPressTimer = setTimeout(() => {
-                        longPressTimer = null;
-                        
-                        document.getElementById('contextLoadBtn').dataset.index = index;
-                        document.getElementById('contextRenameBtn').dataset.index = index;
-                        document.getElementById('contextAsTemplateBtn').dataset.index = index;
-                        document.getElementById('contextExportBtn').dataset.index = index;
-                        document.getElementById('contextDeleteBtn').dataset.index = index;
-
-                        hideDroplets();
-                        showModal(contextMenuModal, contextMenuContent);
-                    }, LONG_PRESS_DURATION_CONTEXT);
-                }
-            }
-
-            function handleCardEnd(e) {
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                    
-                    const card = e.target.closest('.snippet-card');
-                    if (card) {
-                        const index = parseInt(card.dataset.index);
-                        
-                        editor.value = droplets[index].html;
-                        currentSnippetIndex = index;
-                        updatePreview();
-                        updateActionButton();
-                        
-                        hideDroplets();
-                        
-                        editorWrapper.classList.add('hidden');
-                        previewContainer.classList.remove('hidden');
-                        setActiveButton(previewBtn);
-                        
-                        // A quick tap loads the snippet and shows the fullscreen preview
-                        enterFullscreen(); 
-                    }
-                }
-            }
-            // Add handler for scroll/move to cancel long press
-            dropletsList.addEventListener('scroll', handleCardMove);
-            dropletsList.addEventListener('touchmove', handleCardMove);
-            function handleCardMove() {
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-            }
-            // --- Initialization ---
-            const init = () => {
-                loadDropletsFromStorage();
-                loadTemplatesFromStorage();
-                
-                if (droplets.length > 0) {
-                    editor.value = droplets[0].html;
-                    currentSnippetIndex = 0;
-                } else {
-                    editor.value = baseTemplates.default;
-                    currentSnippetIndex = null;
-                }
-                
-                updatePreview();
-                updateActionButton();
-                setActiveButton(editBtn);
-                previewContainer.classList.add('hidden');
-                editorWrapper.classList.remove('hidden');
-                renderTemplateOptions(); 
-            };
-
-            init();
         });
+
+        document.getElementById('email-sign-in-btn').addEventListener('click', () => {
+            // NOTE: In a production app, this would open a modal/form for email/password input.
+            alert("Email/Password sign-in requires a separate form and function (e.g., createUserWithEmailAndPassword). Using Google for demo.");
+        });
+        
+        document.getElementById('sign-out-btn').addEventListener('click', () => {
+            signOut(auth).catch(error => console.error("Sign out error:", error));
+        });
+
+        // 🛡️ The core of the app: listens for login/logout changes
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                authScreen.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                initApp();
+            } else {
+                currentUser = null;
+                authScreen.classList.remove('hidden');
+                appContainer.classList.add('hidden');
+                // Clean up UI/data when logged out
+                notes = [];
+                activeNoteId = null;
+                notesList.innerHTML = '';
+            }
+        });
+
+        // ====================================================================
+        // --- DATA MIGRATION ---
+        // ====================================================================
+
+        async function migrateLocalNotes(uid) {
+            const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (!localData) return;
+
+            const localNotes = JSON.parse(localData);
+            if (localNotes.length === 0) return;
+
+            if (confirm(`Found ${localNotes.length} notes in your browser. Do you want to migrate them to your cloud account?`)) {
+                const notesCollectionRef = collection(db, `users/${uid}/notes`);
+                
+                for (const note of localNotes) {
+                    // Use Firestore's auto-ID for new documents, but keep the data
+                    await setDoc(doc(notesCollectionRef), {
+                        title: note.title,
+                        body: note.body,
+                        tags: note.tags || [],
+                        isLocked: note.isLocked || false,
+                        modifiedAt: new Date(note.modifiedAt || note.createdAt),
+                        createdAt: new Date(note.createdAt)
+                    });
+                }
+                // Important: Clear local storage after successful migration
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                alert("Migration complete! Local notes deleted. Your notes are now in the cloud. ✨");
+            }
+        }
+        
+        // ====================================================================
+        // --- FIRESTORE DATA SYNC & CRUD ---
+        // ====================================================================
+
+        // Get or Create User Preferences
+        async function loadUserPreferences(uid) {
+            const userDocRef = doc(db, 'users', uid);
+            const userDoc = await getDoc(userDocRef);
+            let prefs;
+
+            if (userDoc.exists()) {
+                prefs = userDoc.data();
+            } else {
+                // Create default preferences
+                prefs = { theme: 'light-mode', lastActiveNoteId: null };
+                await setDoc(userDocRef, prefs);
+            }
+            
+            // Apply theme preference
+            body.className = prefs.theme;
+            
+            // Migrate local data on first sign-in
+            if (!userDoc.exists()) {
+                await migrateLocalNotes(uid);
+            }
+
+            return prefs;
+        }
+
+        function syncNotesListener(uid, lastActiveId = null) {
+            const notesCollectionRef = collection(db, `users/${uid}/notes`);
+            // Query for notes, ordered by modifiedAt descending
+            const q = query(notesCollectionRef, orderBy('modifiedAt', 'desc'));
+
+            // Real-time listener
+            onSnapshot(q, (snapshot) => {
+                notes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                renderNotesList();
+                renderTagChips();
+                
+                if (notes.length > 0) {
+                    let noteToLoad = notes[0].id;
+                    if (activeNoteId) {
+                        noteToLoad = activeNoteId; // Keep current note active
+                    } else if (lastActiveId && notes.some(n => n.id === lastActiveId)) {
+                        noteToLoad = lastActiveId; // Load last active from prefs
+                    }
+                    loadNote(noteToLoad);
+                } else {
+                    addNote(); // Create a placeholder note if none exist
+                }
+            }, (error) => {
+                console.error("Firestore listener failed:", error);
+                alert("Could not load notes in real-time. Check connection/security rules.");
+            });
+        }
+        
+        // C - Create Note
+        async function addNote() {
+            if (!currentUser) return;
+            const notesCollectionRef = collection(db, `users/${currentUser.uid}/notes`);
+            
+            const newNote = {
+                title: 'Untitled Note',
+                body: '',
+                tags: [],
+                isLocked: false,
+                createdAt: serverTimestamp(),
+                modifiedAt: serverTimestamp()
+            };
+
+            try {
+                const docRef = await setDoc(doc(notesCollectionRef), newNote);
+                activeNoteId = docRef.id;
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
+        }
+
+        // U - Update Note
+        async function updateNoteInCloud() {
+            if (!activeNoteId || !currentUser) return;
+            
+            const noteDocRef = doc(db, `users/${currentUser.uid}/notes`, activeNoteId);
+            
+            const updateData = {
+                title: noteTitleInput.value.trim() || 'Untitled Note',
+                body: editorBody.innerHTML,
+                tags: tagInput.value.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag),
+                modifiedAt: serverTimestamp()
+            };
+
+            try {
+                await updateDoc(noteDocRef, updateData);
+            } catch (e) {
+                console.error("Error updating document: ", e);
+            }
+        }
+        
+        // D - Delete Note
+        async function deleteNote() {
+            if (!activeNoteId || !currentUser || !confirm("Are you sure you want to delete this cloud note?")) return;
+
+            try {
+                await deleteDoc(doc(db, `users/${currentUser.uid}/notes`, activeNoteId));
+                activeNoteId = null;
+            } catch (e) {
+                console.error("Error deleting document: ", e);
+            }
+        }
+        
+        // Toggle Lock State
+        async function toggleLock() {
+            if (!activeNoteId || !currentUser) return;
+            const note = notes.find(n => n.id === activeNoteId);
+            if (!note) return;
+
+            const noteDocRef = doc(db, `users/${currentUser.uid}/notes`, activeNoteId);
+            const newLockState = !note.isLocked;
+
+            try {
+                await updateDoc(noteDocRef, { isLocked: newLockState });
+                loadNote(activeNoteId); // Force re-render lock icon and disable fields
+            } catch (e) {
+                console.error("Error toggling lock: ", e);
+            }
+        }
+
+        // R - Load Note (UI function, data comes from snapshot)
+        function loadNote(id) {
+            const note = notes.find(n => n.id === id);
+            if (!note) return;
+
+            activeNoteId = id;
+            noteTitleInput.value = note.title;
+            editorBody.innerHTML = note.body;
+            tagInput.value = note.tags.join(', ');
+
+            // Apply lock state
+            const isLocked = note.isLocked;
+            noteTitleInput.disabled = isLocked;
+            editorBody.disabled = isLocked;
+            lockNoteBtn.innerHTML = isLocked 
+                ? '<i class="fas fa-lock"></i>' 
+                : '<i class="fas fa-lock-open"></i>';
+            lockNoteBtn.title = isLocked ? 'Unlock Note' : 'Lock Note';
+
+            // Highlight active note
+            document.querySelectorAll('.note-item').forEach(el => el.classList.remove('active'));
+            const activeEl = document.getElementById(`note-${id}`);
+            if(activeEl) activeEl.classList.add('active');
+            
+            // If in focus mode, update focus content too
+            if(focusOverlay.style.display !== 'none') {
+                focusContent.innerHTML = note.body;
+            }
+        }
+
+        // ====================================================================
+        // --- RENDERING & UI (Modified to use the 'notes' array) ---
+        // ====================================================================
+
+        function renderNotesList() {
+            notesList.innerHTML = '';
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const showLockedOnly = searchTerm.includes('locked');
+
+            const filteredNotes = notes.filter(note => {
+                if (note.isLocked && !showLockedOnly) return false;
+                
+                const titleBodyMatch = note.title.toLowerCase().includes(searchTerm) || note.body.toLowerCase().includes(searchTerm);
+                const tagMatch = note.tags.some(tag => tag.toLowerCase().includes(searchTerm.replace('#', '')));
+                
+                if (showLockedOnly) {
+                    return note.isLocked;
+                } else {
+                    return titleBodyMatch || tagMatch;
+                }
+            });
+
+            filteredNotes.forEach(note => {
+                const div = document.createElement('div');
+                div.className = 'note-item';
+                div.id = `note-${note.id}`;
+                if (note.id === activeNoteId) div.classList.add('active');
+                
+                // Convert Firestore Timestamp to Date for display
+                const modifiedDate = note.modifiedAt && note.modifiedAt.toDate ? note.modifiedAt.toDate() : new Date(note.modifiedAt);
+
+                div.innerHTML = `
+                    <h4>${note.title} ${note.isLocked ? '<i class="fas fa-lock" style="font-size: 0.9em; margin-left: 5px;"></i>' : ''}</h4>
+                    <small>${modifiedDate.toLocaleDateString()}</small>
+                `;
+                div.onclick = () => loadNote(note.id);
+                notesList.appendChild(div);
+            });
+        }
+        
+        function renderTagChips() {
+            // ... (keep tag chip logic as before)
+            tagChipsContainer.innerHTML = '';
+            const allTags = new Set();
+            notes.forEach(note => note.tags.forEach(tag => allTags.add(tag)));
+
+            Array.from(allTags).sort().slice(0, 15).forEach(tag => { 
+                const chip = document.createElement('span');
+                chip.className = 'tag-chip';
+                chip.textContent = `#${tag}`;
+                chip.onclick = () => { 
+                    searchInput.value = tag; 
+                    renderNotesList();
+                    searchInput.focus();
+                };
+                tagChipsContainer.appendChild(chip);
+            });
+        }
+
+        // --- UI ACTIONS (Mode, Focus, etc. - mostly unchanged) ---
+        
+        function toggleMode() {
+            body.classList.toggle('dark-mode');
+            body.classList.toggle('light-mode');
+            // TODO: Update preference in Firestore here
+        }
+
+        function executeFormatAction(command, value = null) {
+            document.execCommand(command, false, value);
+            editorBody.focus();
+            updateNoteInCloud(); // Save immediately after formatting
+        }
+
+        function toggleFocusMode() {
+            // ... (keep focus mode logic as before)
+            const isFocusing = focusOverlay.style.display === 'flex';
+            if (!activeNoteId) return;
+
+            if (!isFocusing) {
+                focusContent.innerHTML = editorBody.innerHTML;
+                focusContent.setAttribute('contenteditable', 'true');
+                focusOverlay.style.display = 'flex';
+                focusContent.focus();
+            } else {
+                editorBody.innerHTML = focusContent.innerHTML;
+                updateNoteInCloud();
+                focusOverlay.style.display = 'none';
+                editorBody.focus();
+            }
+        }
+        
+        // ... (Keep Quick Action Menu, Import/Export/Download functions as before) ...
+        
+        // --- Quick Action Menu Logic ---
+        function showQuickActionMenu(x, y) {
+            const editorContainer = document.querySelector('.note-editor-container');
+            const editorRect = editorContainer.getBoundingClientRect();
+            
+            quickActionMenu.style.left = `${x - editorRect.left}px`;
+            quickActionMenu.style.top = `${y - editorRect.top + editorBody.scrollTop}px`;
+            quickActionMenu.classList.remove('hidden');
+        }
+
+        editorBody.addEventListener('keydown', (e) => {
+            if (e.key === '/') {
+                setTimeout(() => {
+                    const selection = window.getSelection();
+                    if (selection.rangeCount > 0) {
+                        const range = selection.getRangeAt(0);
+                        const rect = range.getBoundingClientRect();
+                        showQuickActionMenu(rect.left, rect.bottom + 10);
+                    }
+                }, 10);
+            } else if (e.key === 'Escape' || !quickActionMenu.classList.contains('hidden')) {
+                quickActionMenu.classList.add('hidden');
+            }
+        });
+        
+        // Export functions (not cloud-dependent, mostly for user backup)
+        function downloadFile(content, fileName, mimeType) { /* ... (as before) */ }
+        function exportNote() { /* ... (as before) */ }
+        function exportBackup() { /* ... (as before) */ }
+        function importBackup() { /* ... (as before) */ }
+        
+        // --- INITIALIZATION & BINDINGS ---
+
+        async function initApp() {
+            // 1. Load User Preferences and run migration check
+            const prefs = await loadUserPreferences(currentUser.uid);
+            
+            // 2. Start Real-time Data Listener
+            syncNotesListener(currentUser.uid, prefs.lastActiveNoteId);
+
+            // Event Listeners for CRUD/Persistence
+            noteTitleInput.addEventListener('input', updateNoteInCloud);
+            editorBody.addEventListener('input', updateNoteInCloud);
+            tagInput.addEventListener('input', updateNoteInCloud);
+            
+            // Re-bind only if not already bound (safety measure)
+            if (!document.getElementById('add-note-btn').hasAttribute('data-bound')) {
+                searchInput.addEventListener('input', renderNotesList);
+                document.getElementById('add-note-btn').addEventListener('click', addNote);
+                document.getElementById('delete-note-btn').addEventListener('click', deleteNote);
+                document.getElementById('lock-note-btn').addEventListener('click', toggleLock);
+                
+                // Add bound attribute to prevent double-binding on re-login
+                document.getElementById('add-note-btn').setAttribute('data-bound', true);
+            }
+
+            // Other UI Bindings...
+            // ... (Toolbar, Focus Mode, Import/Export bindings as before) ...
+        }
+
     </script>
 </body>
 </html>
