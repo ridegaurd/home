@@ -1,720 +1,926 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CronoTrack</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Konsolo Mobile Editor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.0/dist/confetti.browser.min.js"></script>
     <style>
-        :root {
-            --bg-light: #f0f2f5;
-            --bg-dark: #121212;
-            --text-light: #1c1c1e;
-            --text-dark: #e5e5e7;
-            --glass-bg-light: rgba(255, 255, 255, 0.35);
-            --glass-bg-dark: rgba(30, 30, 30, 0.5);
-            --glass-border-light: rgba(255, 255, 255, 0.4);
-            --glass-border-dark: rgba(50, 50, 50, 0.6);
-            --primary-accent: #4c82f7;
-            --font-scale: 1.0;
-        }
-
-        html {
-            touch-action: manipulation;
-        }
-
-        body {
+        /* A clean, mobile-first dark design system */
+        html, body {
+            overscroll-behavior: none;
             font-family: 'Inter', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            font-size: calc(16px * var(--font-scale));
+            color: #e2e8f0; /* Light text for dark background */
+            background-color: #0f172a; /* Slate 900 */
+            transition: background-color 0.3s ease;
         }
-
-        .splash-screen {
-            animation: fadeOut 2.5s forwards;
-            animation-delay: 1.5s;
-        }
-
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; visibility: hidden; }
-        }
-
-        .page.hidden {
-            display: none;
-        }
-
-        @keyframes pageFadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .page-fade-in {
-            animation: pageFadeIn 0.3s ease-out forwards;
-        }
-
-        .glass-effect {
-            backdrop-filter: blur(16px) saturate(180%);
-            -webkit-backdrop-filter: blur(16px) saturate(180%);
-        }
-
-        html.light .glass-effect {
-            background-color: var(--glass-bg-light);
-            border: 1px solid var(--glass-border-light);
-        }
-
-        html.dark .glass-effect {
-            background-color: var(--glass-bg-dark);
-            border: 1px solid var(--glass-border-dark);
+        :root {
+            --accent-color: #f97316;
         }
         
-        .side-menu {
-            transform: translateX(-100%);
-            transition: transform 0.3s ease-in-out;
-        }
-
-        .side-menu.open {
-            transform: translateX(0);
-        }
-        
-        .backdrop {
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-        }
-        
-        .backdrop.open {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        /* Custom slider styles for better touch */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: transparent;
-            padding: 10px 0; /* Add padding to make the touch area larger */
-        }
-        
-        input[type=range]:focus {
+        /* EDITOR CORE STYLING */
+        #editor {
+            font-family: 'Fira Code', monospace;
+            tab-size: 2;
+            line-height: 1.5rem;
+            -webkit-text-size-adjust: 100%;
+            background-color: #1e293b; /* Slate 800 */
+            color: #e2e8f0;
+            caret-color: #f97316;
+            transition: all 0.3s ease;
+            width: 100%; 
+            height: 100%;
+            padding: 1rem;
+            resize: none;
+            border: 0;
             outline: none;
         }
         
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 6px;
-            cursor: pointer;
-            background: rgba(76, 130, 247, 0.5);
-            border-radius: 6px;
+        /* Quick Action Bar Styling */
+        #quickActionBar {
+            background-color: #334155; /* Slate 700 */
+            border-top: 1px solid #475569;
+        }
+        .quick-action-btn {
+            background-color: #475569; /* Slate 600 */
+            color: #f8fafc;
+        }
+        .quick-action-btn:active {
+            background-color: #64748b; /* Slate 500 */
+        }
+
+        /* PANEL TRANSITIONS */
+        .panel-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 300ms ease-out, transform 300ms ease-out;
+        }
+        .panel-exit-active {
+            opacity: 0;
+            transform: translateY(100%);
+            transition: opacity 300ms ease-in, transform 300ms ease-in;
         }
         
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 28px;
-            width: 28px;
-            border-radius: 50%;
-            background: white;
-            cursor: pointer;
-            margin-top: -11px;
-            border: 2px solid var(--primary-accent);
-            box-shadow: 0 0 10px rgba(76, 130, 247, 0.5);
+        /* --- Snippet Carousel Styling --- */
+        #dropletsList {
+            overflow-x: scroll;
+            scroll-snap-type: x mandatory;
+            padding: 1rem 0; 
+            align-items: stretch;
+            height: 100%; 
+            display: flex;
         }
-
-        input[type=range]::-moz-range-track {
+        .snippet-card-wrapper {
+            scroll-snap-align: center;
+            max-height: 85vh; 
+            margin-left: 1rem; 
+            flex-shrink: 0; 
+            width: 80vw;
+            max-width: 320px;
+            height: 100%; 
+            display: flex;
+        }
+        .snippet-card-wrapper:last-child {
+            margin-right: 1rem; 
+        }
+        .snippet-card {
+            height: 100%;
             width: 100%;
-            height: 6px;
-            cursor: pointer;
-            background: rgba(76, 130, 247, 0.5);
-            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            background-color: #1e293b; /* Dark Card Background */
+            border-color: #f97316;
         }
-
-        input[type=range]::-moz-range-thumb {
-            height: 28px;
-            width: 28px;
-            border-radius: 50%;
-            background: white;
-            cursor: pointer;
-            border: 2px solid var(--primary-accent);
-            box-shadow: 0 0 10px rgba(76, 130, 247, 0.5);
+        .snippet-card-preview {
+            width: 100%;
+            padding-bottom: 75%; 
+            position: relative; 
+            overflow: hidden;
+            flex-shrink: 0; 
+            background-color: white; 
+            border-top: 1px solid #334155; 
         }
+        .snippet-card-preview iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            transform: scale(0.5) translate(-25%, -25%); 
+            transform-origin: top left;
+            pointer-events: none;
+            background-color: white;
+        }
+        /* --- Snippet Carousel Styling END --- */
 
+        .toolbar-btn.active { color: var(--accent-color); }
+        .toolbar-btn { color: #64748b; }
+        .fullscreen-preview { 
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            /* FIX: Occupy full height/width without bottom navbar */
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 50;
+            display: flex !important; 
+            flex-direction: column;
+        }
+        .toolbar-hidden { display: none !important; }
+        
+        /* Slim Bar Visibility and Style */
+        #slimBar { 
+            background-color: rgba(30, 41, 59, 0.9); 
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0; /* Ensure text is light */
+            /* FIX: Make sure slim bar is always on top */
+            z-index: 60; 
+        }
+        #slimBar button svg { color: #e2e8f0; } /* Ensure icons are light */
+
+        /* Dark Mode UI Elements (Consistent Styling) */
+        #topBar { background-color: #1e293b; border-color: #334155; }
+        #bottomNav { background-color: rgba(30, 41, 59, 0.9); border-color: #334155; }
+        #homeScreen .bg-white { background-color: #1e293b; color: #e2e8f0; }
+        .code-snippet-box { background-color: #0f172a; border: 1px solid #334155; }
+        #homeScreen button { color: #e2e8f0; }
+        #goToDropletsBtn { background-color: #334155; }
+        #goToDropletsBtn:hover { background-color: #475569; }
+        
+        #dropletsPanel { background-color: #0f172a; }
+        #dropletsPanel header { border-color: #334155; }
+        #dropletsPanel button { color: #e2e8f0; }
+        #templateSelect { background-color: #334155; border-color: #475569; color: #e2e8f0; }
+        #loadTemplateBtn { background-color: #f97316; color: white; }
+        
+        #saveModalContent { background-color: #1e293b; }
+        #snippetTitleInput { background-color: #334155; border-color: #475569; color: #e2e8f0; }
+        #contextMenuContent { background-color: #1e293b; }
+        #contextMenuContent button { color: #e2e8f0; }
+        #contextMenuContent button:hover { background-color: #334155; }
+        .text-red-600 { color: #f87171; }
+        
+        .snippet-card .text-gray-900 { color: #e2e8f0; } /* Carousel Title Color */
+        
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #64748b; border-radius: 3px; }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-black text-gray-900 dark:text-gray-100 overflow-hidden h-screen w-screen fixed inset-0">
+<body class="h-screen w-screen flex flex-col overflow-hidden antialiased">
 
-    <!-- Splash Screen -->
-    <div id="splash-screen" class="splash-screen fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-100 dark:bg-black">
-        <svg class="w-20 h-20 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
-        <h1 class="text-4xl font-black mt-4 tracking-tighter">CronoTrack</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Focus, tracked.</p>
-    </div>
-
-    <!-- App Wrapper -->
-    <div id="app-wrapper" class="h-full w-full">
-        <!-- Header -->
-        <header class="fixed top-0 left-0 right-0 z-20 p-4 flex justify-between items-center">
-            <button id="menu-btn" class="p-3 active:opacity-50 transition-transform active:scale-90">
-                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-            </button>
-            <div class="flex items-center gap-2 glass-effect rounded-full px-4 py-2">
-                 <svg class="w-5 h-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15.82 15.82-1.42 1.42-1.4-1.4-1.42-1.42-1.4 1.4-1.42-1.42-1.42 1.4-1.42 1.42-1.4-1.4-1.42 1.42-1.4-1.4-1.42-1.42 1.4-1.4 1.42-1.42 1.4-1.4 1.42-1.42 1.42 1.4 1.42 1.42 1.4-1.4 1.42 1.42Z"/><path d="M12 22s-4-2-4-8 4-8 4-8 4 2 4 8-4 8-4 8Z"/></svg>
-                <span id="points-display" class="font-bold text-lg">0</span>
+    <div id="homeScreen" class="h-full w-full flex flex-col items-center justify-center p-8 text-center transition-all duration-300">
+        <div class="mb-10 w-full max-w-sm p-6 bg-white rounded-xl shadow-2xl transition-all duration-300">
+            <h1 class="text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">Konsolo</h1>
+            <p class="mt-2 text-xl font-medium text-gray-700">Code Snippets on the Go.</p>
+            
+            <div class="code-snippet-box p-3 mt-6 text-left text-xs font-mono select-none overflow-x-auto rounded-lg">
+                <span class="text-orange-400">&lt;div</span> <span class="text-cyan-400">class</span>=<span class="text-yellow-400">"konsolo-app"</span><span class="text-orange-400">&gt;</span><br>
+                <span class="text-slate-500 ml-3">// Write your HTML here</span><br>
+                <span class="text-orange-400 ml-3">&lt;h1&gt;</span>Hello Mobile Coder<span class="text-orange-400">&lt;/h1&gt;</span><br>
+                <span class="text-orange-400">&lt;/div&gt;</span>
             </div>
-        </header>
-
-        <!-- Side Menu -->
-        <div id="backdrop" class="backdrop fixed inset-0 z-30 bg-black/50"></div>
-        <nav id="side-menu" class="side-menu fixed top-0 left-0 h-full w-4/5 max-w-sm z-40 glass-effect p-6 flex flex-col">
-            <div class="flex items-center justify-between mb-12">
-                <h2 class="text-3xl font-black tracking-tighter">CronoTrack</h2>
-                <button id="close-menu-btn" class="p-3 active:opacity-50 transition-transform active:scale-90">
-                    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            
+            <div class="w-full space-y-4 mt-8">
+                <button id="goToEditorBtn" class="w-full bg-orange-500 text-white font-semibold py-4 rounded-lg shadow-xl shadow-orange-500/30 hover:bg-orange-600 focus:outline-none focus:ring-4 focus:ring-orange-500/50 transition-all text-lg">
+                    Launch Editor
+                </button>
+                <button id="goToDropletsBtn" class="w-full bg-gray-200 text-gray-800 font-semibold py-4 rounded-lg hover:bg-gray-300 transition-all text-lg">
+                    View Snippets
                 </button>
             </div>
-            <ul class="flex flex-col gap-2">
-                <li><a href="#pomodoro" class="nav-link text-xl font-bold p-4 block rounded-lg active:bg-white/10 transition-transform active:scale-95" data-page="pomodoro-page">Pomodoro</a></li>
-                <li><a href="#tasks" class="nav-link text-xl font-bold p-4 block rounded-lg active:bg-white/10 transition-transform active:scale-95" data-page="tasks-page">Tasks</a></li>
-                <li><a href="#settings" class="nav-link text-xl font-bold p-4 block rounded-lg active:bg-white/10 transition-transform active:scale-95" data-page="settings-page">Settings</a></li>
-                <li><a href="#data" class="nav-link text-xl font-bold p-4 block rounded-lg active:bg-white/10 transition-transform active:scale-95" data-page="data-page">Data & Info</a></li>
-            </ul>
-        </nav>
-
-        <!-- Main Content -->
-        <main id="main-content" class="h-full w-full pt-20">
-            <!-- Pomodoro Page -->
-            <div id="pomodoro-page" class="page h-full w-full flex flex-col items-center justify-between p-4">
-                <div class="w-full flex justify-center items-center flex-grow flex-col">
-                    <div class="relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center">
-                        <svg class="absolute inset-0 transform -rotate-90" viewBox="0 0 120 120">
-                            <circle class="text-gray-200 dark:text-gray-700" stroke-width="8" stroke="currentColor" fill="transparent" r="52" cx="60" cy="60" />
-                            <circle id="timer-progress" class="text-blue-500" stroke-width="8" stroke-linecap="round" stroke="currentColor" fill="transparent" r="52" cx="60" cy="60"
-                                    stroke-dasharray="326.72" stroke-dashoffset="326.72"/>
-                        </svg>
-                        <div class="flex flex-col items-center">
-                            <h3 id="timer-mode" class="text-lg font-semibold text-gray-500 dark:text-gray-400">Focus</h3>
-                            <h1 id="timer-display" class="text-7xl font-black tracking-tighter">25:00</h1>
-                        </div>
-                    </div>
-                    <div class="w-full max-w-sm p-4 space-y-4 mt-4">
-                        <div id="pomodoro-slider-container">
-                            <div class="flex justify-between items-baseline mb-1">
-                                <label for="pomodoro-slider" class="font-bold">Focus Time</label>
-                                <span id="pomodoro-slider-value" class="font-semibold">25 min</span>
-                            </div>
-                            <input type="range" id="pomodoro-slider" min="1" max="6" value="2" class="w-full">
-                        </div>
-                         <div id="break-slider-container">
-                            <div class="flex justify-between items-baseline mb-1">
-                                <label for="break-slider" class="font-bold">Break Time</label>
-                                <span id="break-slider-value" class="font-semibold">5 min</span>
-                            </div>
-                            <input type="range" id="break-slider" min="1" max="3" value="1" class="w-full">
-                        </div>
-                    </div>
-                </div>
-                <div class="w-full max-w-md pb-4 px-4">
-                    <div class="flex items-center justify-center gap-4">
-                         <button id="reset-btn" class="p-4 active:opacity-50 transition-transform active:scale-90">
-                            <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>
-                        </button>
-                        <button id="start-pause-btn" class="w-20 h-20 bg-blue-500 text-white rounded-full flex items-center justify-center text-xl font-bold active:opacity-80 shadow-lg transition-transform active:scale-95">
-                            <svg id="play-icon" class="w-10 h-10 ml-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l11-7z"/></svg>
-                             <svg id="pause-icon" class="w-10 h-10 hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                        </button>
-                         <button id="skip-btn" class="p-4 active:opacity-50 transition-transform active:scale-90">
-                            <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 4 10 8-10 8V4z"/><path d="M19 4v16"/></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tasks Page -->
-            <div id="tasks-page" class="page hidden h-full w-full flex flex-col items-center justify-center p-4">
-                <h2 class="text-4xl font-black mb-4">Tasks</h2>
-                <p class="text-lg text-gray-500 dark:text-gray-400">Coming Soon!</p>
-            </div>
-
-            <!-- Settings Page -->
-            <div id="settings-page" class="page hidden h-full w-full flex flex-col p-4 overflow-y-auto">
-                <h2 class="text-4xl font-black mb-6 px-2">Settings</h2>
-                
-                <!-- Appearance Settings Card -->
-                <div class="glass-effect rounded-2xl p-4 mb-6">
-                    <h3 class="font-bold text-lg px-2 mb-2">Appearance</h3>
-                    <div class="divide-y divide-gray-500/20">
-                        <div class="flex items-center justify-between py-3 px-2">
-                            <div class="flex items-center gap-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-                                <label for="theme-toggle" class="font-semibold">Dark Mode</label>
-                            </div>
-                            <button id="theme-toggle" class="relative inline-flex items-center h-8 rounded-full w-14 transition-colors">
-                                <span class="absolute inline-block w-6 h-6 transform bg-white rounded-full transition-transform" id="theme-toggle-indicator"></span>
-                            </button>
-                        </div>
-                        <div class="flex flex-col py-3 px-2">
-                            <div class="flex items-center gap-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M4 21V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12"/><path d="M4 7V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/><path d="M12 15a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/></svg>
-                                <label for="text-size-slider" class="font-semibold">Text Size</label>
-                            </div>
-                            <div class="flex items-center gap-4 mt-3">
-                               <span class="text-sm font-bold">A</span>
-                               <input type="range" id="text-size-slider" min="0.8" max="1.3" step="0.1" value="1.0" class="w-full">
-                               <span class="text-2xl font-bold">A</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- About Card -->
-                 <div class="glass-effect rounded-2xl p-4">
-                    <h3 class="font-bold text-lg px-2 mb-2">About</h3>
-                     <div class="divide-y divide-gray-500/20 text-sm">
-                        <div class="flex items-center justify-between py-3 px-2">
-                            <p class="font-semibold">App Version</p>
-                            <p class="text-gray-500 dark:text-gray-400">1.0.1</p>
-                        </div>
-                        <div class="flex items-center justify-between py-3 px-2">
-                            <p class="font-semibold">Creator</p>
-                            <p class="text-gray-500 dark:text-gray-400">Preran P</p>
-                        </div>
-                     </div>
-                </div>
-            </div>
-
-            <!-- Data Page -->
-            <div id="data-page" class="page hidden h-full w-full flex flex-col p-4 overflow-y-auto">
-                 <h2 class="text-4xl font-black mb-6 px-2">Data & Info</h2>
-                 <div class="space-y-4">
-                     <button id="reset-app-btn" class="w-full text-left font-bold text-lg p-4 rounded-2xl bg-red-500/10 text-red-500 active:bg-red-500/20 transition-transform active:scale-95 flex items-center gap-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>
-                        Reset App
-                    </button>
-                     <button id="export-data-btn" class="w-full text-left font-bold text-lg p-4 rounded-2xl bg-blue-500/10 text-blue-500 active:bg-blue-500/20 transition-transform active:scale-95 flex items-center gap-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                        Export Data
-                    </button>
-                     <button id="import-data-btn" class="w-full text-left font-bold text-lg p-4 rounded-2xl bg-green-500/10 text-green-500 active:bg-green-500/20 transition-transform active:scale-95 flex items-center gap-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                        Import Data
-                    </button>
-                     <input type="file" id="import-file-input" class="hidden" accept=".json">
-                 </div>
-            </div>
-            
-            <!-- Custom Alert Modal -->
-            <div id="alert-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-                <div class="glass-effect rounded-2xl p-6 w-full max-w-sm text-center">
-                    <h3 id="alert-title" class="text-xl font-bold mb-2"></h3>
-                    <p id="alert-message" class="text-gray-800 dark:text-gray-200 mb-6"></p>
-                    <div id="alert-actions" class="flex gap-4">
-                        <!-- Buttons will be injected here -->
-                    </div>
-                </div>
-            </div>
-
-        </main>
+        </div>
     </div>
 
+    <div id="appContainer" class="h-full w-full flex-col hidden transition-all duration-300">
+        <header id="topBar" class="flex-shrink-0 z-10 p-3 border-b flex items-center justify-between transition-all duration-300">
+            <button id="homeBtn" class="p-2 rounded-md hover:bg-gray-700 transition-colors">
+                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            </button>
+            <h1 id="titleDisplay" class="text-base font-bold truncate px-2 text-gray-200">Konsolo Editor</h1>
+            <button id="actionBtn" class="text-sm font-semibold bg-orange-500 text-white px-3 py-1.5 rounded-md hover:bg-orange-600 transition-colors">Save</button>
+        </header>
+        
+        <div id="quickActionBar" class="flex-shrink-0 w-full flex justify-start overflow-x-auto p-1.5 whitespace-nowrap hidden">
+            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">&lt;</button>
+            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">&gt;</button>
+            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">/</button>
+            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">&amp;</button>
+            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">:</button>
+            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">;</button>
+            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">|</button>
+            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">Tab</button>
+            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">"</button>
+            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">'</button>
+            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">{</button>
+            <button class="quick-action-btn px-3 py-1.5 m-0.5 rounded-lg text-sm font-mono">(</button>
+        </div>
+
+        <main class="flex-grow relative overflow-hidden pb-16">
+            <div id="editorWrapper" class="h-full">
+                <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+            </div>
+            
+            <div id="previewContainer" class="w-full h-full bg-white hidden relative">
+                <iframe id="preview" class="w-full h-full" sandbox="allow-scripts allow-same-origin"></iframe>
+                <button id="fullscreenBtn" class="absolute top-2 right-2 p-2 bg-gray-800/70 backdrop-blur rounded-md shadow hover:bg-gray-700 transition-all z-20">
+                    <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5v4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"></path></svg>
+                </button>
+            </div>
+        </main>
+
+        <nav id="bottomNav" class="fixed bottom-0 left-0 right-0 backdrop-blur-sm border-t flex justify-around items-center z-30 transition-all duration-300">
+            <button id="editBtn" class="toolbar-btn flex-1 p-2 text-center active transition-colors">
+                <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                <span class="text-xs font-medium mt-1">Editor</span>
+            </button>
+            <button id="previewBtn" class="toolbar-btn flex-1 p-2 text-center transition-colors">
+                <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                <span class="text-xs font-medium mt-1">Preview</span>
+            </button>
+            <button id="dropletsBtn" class="toolbar-btn flex-1 p-2 text-center transition-colors">
+                <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                <span class="text-xs font-medium mt-1">Snippets</span>
+            </button>
+        </nav>
+    </div>
+
+    <nav id="slimBar" class="fixed bottom-0 left-0 right-0 h-9 flex items-center justify-between px-4 text-xs font-medium z-55" style="display:none;">
+        <button id="slimExitBtn" class="flex items-center space-x-1 py-1 px-2 rounded hover:bg-gray-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>Exit</span>
+        </button>
+        <button id="slimReloadBtn" class="py-1 px-2 rounded hover:bg-gray-700 transition-colors">Reload</button>
+    </nav>
+
+    <div id="dropletsPanel" class="fixed inset-0 z-40 transform translate-y-full opacity-0 flex flex-col transition-all duration-300 ease-in-out">
+        <header class="p-4 border-b flex-shrink-0 flex items-center justify-between gap-4">
+            <h2 class="text-lg font-bold">Your Konsolo Snippets</h2>
+             <div class="flex items-center gap-2">
+                <button id="importBtn" class="text-sm font-semibold px-3 py-1.5 rounded-md hover:bg-gray-700 transition-colors">Import</button>
+                <input type="file" id="importFile" accept=".kkode" class="hidden">
+                <button id="newDropletBtn" class="text-sm font-semibold text-orange-400 px-3 py-1.5 rounded-md hover:bg-gray-700 transition-colors">New</button>
+                <button id="closeDropletsBtn" class="text-gray-400 hover:text-gray-200 text-2xl transition-colors">&times;</button>
+            </div>
+        </header>
+        <div id="dropletsList" class="flex-grow overflow-x-auto p-4 custom-scrollbar flex items-stretch gap-4">
+            </div>
+        
+        <div class="flex-shrink-0 p-4 border-t bg-gray-800">
+            <label for="templateSelect" class="block text-sm font-medium text-gray-400 mb-2">Start from a Template:</label>
+            <select id="templateSelect" class="w-full px-3 py-2 border rounded-md focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                <option value="default">Default Konsolo</option>
+                <option value="tailwind">Tailwind CSS Starter</option>
+                <option value="skeleton">Minimal HTML Skeleton</option>
+                </select>
+            <button id="loadTemplateBtn" class="w-full mt-3 font-semibold py-2 rounded-md transition-colors">Load Template into Editor</button>
+        </div>
+    </div>
+    
+    <div id="saveModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 hidden items-center justify-center p-4">
+        <div id="saveModalContent" class="rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4 transform scale-95 opacity-0 transition-all duration-300">
+            <h3 id="saveModalTitle" class="text-lg font-bold">Save Current Snippet</h3>
+            <input type="text" id="snippetTitleInput" placeholder="Snippet Title (e.g., 'Hero Section')" class="w-full px-4 py-2 border rounded-md focus:ring-orange-500 focus:border-orange-500 transition-colors">
+            <div class="flex justify-end space-x-3">
+                <button id="cancelSaveBtn" class="px-4 py-2 text-gray-400 hover:bg-gray-700 rounded-md transition-colors">Cancel</button>
+                <button id="confirmSaveBtn" class="px-4 py-2 bg-orange-500 text-white font-semibold rounded-md hover:bg-orange-600 transition-colors">Save Snippet</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="contextMenuModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 hidden items-center justify-center p-4">
+        <div id="contextMenuContent" class="rounded-lg shadow-xl w-full max-w-xs p-2 transform scale-95 opacity-0 transition-all duration-300">
+            <h3 class="text-sm font-semibold text-gray-400 p-2 border-b border-gray-700">Snippet Options</h3>
+            <button id="contextLoadBtn" data-index="" class="w-full text-left p-3 flex items-center space-x-2 hover:bg-gray-700 rounded-md transition-colors">Load into Editor</button>
+            <button id="contextRenameBtn" data-index="" class="w-full text-left p-3 flex items-center space-x-2 hover:bg-gray-700 rounded-md transition-colors">Rename Snippet</button>
+            <button id="contextAsTemplateBtn" data-index="" class="w-full text-left p-3 flex items-center space-x-2 text-green-400 hover:bg-gray-700 rounded-md transition-colors">Save as Template</button>
+            <button id="contextExportBtn" data-index="" class="w-full text-left p-3 flex items-center space-x-2 hover:bg-gray-700 rounded-md transition-colors">Export (.kkode)</button>
+            <button id="contextDeleteBtn" data-index="" class="w-full text-left p-3 flex items-center space-x-2 text-red-600 hover:bg-gray-700 rounded-md transition-colors">Delete Snippet</button>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-gray-800 text-white py-2 px-5 rounded-full shadow-lg text-sm opacity-0 transition-all duration-200 z-50">
+        Snippet saved!
+    </div>
+    
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- STATE MANAGEMENT ---
-            let timerInterval = null;
-            let timeLeft = 1500; // 25 minutes in seconds
-            let totalTime = 1500;
-            let timerMode = 'pomodoro'; // 'pomodoro' or 'break'
-            let timerState = 'stopped'; // 'stopped', 'running', 'paused'
-            let points = 0;
+            // --- DOM Elements & State ---
+            const editor = document.getElementById('editor');
+            const editorWrapper = document.getElementById('editorWrapper');
+            const preview = document.getElementById('preview');
+            const previewContainer = document.getElementById('previewContainer');
+            const dropletsPanel = document.getElementById('dropletsPanel');
+            const dropletsList = document.getElementById('dropletsList');
+            const toast = document.getElementById('toast');
+            const topBar = document.getElementById('topBar');
+            const bottomNav = document.getElementById('bottomNav');
+            const slimBar = document.getElementById('slimBar'); 
+            const quickActionBar = document.getElementById('quickActionBar');
+            const titleDisplay = document.getElementById('titleDisplay');
+            const loadTemplateBtn = document.getElementById('loadTemplateBtn');
+            const templateSelect = document.getElementById('templateSelect');
+            const goToEditorBtn = document.getElementById('goToEditorBtn');
+
+            // Modals
+            const saveModal = document.getElementById('saveModal');
+            const saveModalContent = document.getElementById('saveModalContent');
+            const saveModalTitle = document.getElementById('saveModalTitle');
+            const snippetTitleInput = document.getElementById('snippetTitleInput');
+            const contextMenuModal = document.getElementById('contextMenuModal');
+            const contextMenuContent = document.getElementById('contextMenuContent');
+
+            // Buttons
+            const actionBtn = document.getElementById('actionBtn'); 
+            const editBtn = document.getElementById('editBtn');
+            const previewBtn = document.getElementById('previewBtn');
+            const dropletsBtn = document.getElementById('dropletsBtn');
+            const slimExitBtn = document.getElementById('slimExitBtn'); 
+            const slimReloadBtn = document.getElementById('slimReloadBtn'); 
+            const navButtons = [editBtn, previewBtn, dropletsBtn];
+
+            let droplets = [];
+            let customTemplates = [];
+            let currentSnippetIndex = null; 
+            let longPressTimer = null;
+            const LONG_PRESS_DURATION_CONTEXT = 700; 
+
+            const baseTemplates = {
+                default: `<!DOCTYPE html>
+<html>
+<head>
+  <title>Default Konsolo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: sans-serif; background-color: #f0f0f0; color: #333; padding: 20px;}
+  </style>
+</head>
+<body>
+  <h1>Hello Mobile Coder</h1>
+  <p>Start coding your mobile project!</p>
+</body>
+</html>`,
+                tailwind: `<!DOCTYPE html>
+<html>
+<head>
+  <title>Tailwind Starter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"><\/script>
+</head>
+<body class="bg-gray-900 text-white flex h-screen items-center justify-center">
+  <div class="text-center p-8 bg-slate-800 rounded-lg shadow-xl">
+    <h1 class="text-5xl font-extrabold text-teal-400">Tailwind Droplet</h1>
+    <p class="mt-4 text-lg">A responsive, functional snippet.</p>
+    <button class="mt-6 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded">Click Me</button>
+  </div>
+</body>
+</html>`,
+                skeleton: `<!DOCTYPE html>
+<html>
+<head>
+  <title>Minimal Skeleton</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  </body>
+</html>`
+            };
             
-            const pomodoroDurations = { 1: 900, 2: 1500, 3: 2700, 4: 3600, 5: 4500, 6: 5400 }; // 15m to 1h30m
-            const breakDurations = { 1: 300, 2: 600, 3: 900 }; // 5m to 15m
+            // --- Core Functions (Unchanged) ---
+            const updateTitle = () => {
+                const match = editor.value.match(/<title>(.*?)<\/title>/i);
+                if (currentSnippetIndex !== null) {
+                    titleDisplay.textContent = droplets[currentSnippetIndex].title;
+                } else if (match && match[1].trim()) {
+                    titleDisplay.textContent = match[1].trim();
+                } else {
+                    titleDisplay.textContent = 'Untitled Snippet';
+                }
+            };
 
-            // --- DOM ELEMENTS ---
-            const body = document.body;
-            const appWrapper = document.getElementById('app-wrapper');
-            const splashScreen = document.getElementById('splash-screen');
-            const menuBtn = document.getElementById('menu-btn');
-            const closeMenuBtn = document.getElementById('close-menu-btn');
-            const sideMenu = document.getElementById('side-menu');
-            const backdrop = document.getElementById('backdrop');
-            const navLinks = document.querySelectorAll('.nav-link');
-            const pages = document.querySelectorAll('.page');
-            const pointsDisplay = document.getElementById('points-display');
-            const timerDisplay = document.getElementById('timer-display');
-            const timerModeDisplay = document.getElementById('timer-mode');
-            const timerProgress = document.getElementById('timer-progress');
-            const startPauseBtn = document.getElementById('start-pause-btn');
-            const playIcon = document.getElementById('play-icon');
-            const pauseIcon = document.getElementById('pause-icon');
-            const resetBtn = document.getElementById('reset-btn');
-            const skipBtn = document.getElementById('skip-btn');
-            const pomodoroSlider = document.getElementById('pomodoro-slider');
-            const pomodoroSliderValue = document.getElementById('pomodoro-slider-value');
-            const breakSlider = document.getElementById('break-slider');
-            const breakSliderValue = document.getElementById('break-slider-value');
-            const pomodoroSliderContainer = document.getElementById('pomodoro-slider-container');
-            const breakSliderContainer = document.getElementById('break-slider-container');
+            const updatePreview = () => { 
+                preview.srcdoc = editor.value; 
+                updateTitle(); 
+            };
 
-            // Settings
-            const themeToggle = document.getElementById('theme-toggle');
-            const themeToggleIndicator = document.getElementById('theme-toggle-indicator');
-            const textSizeSlider = document.getElementById('text-size-slider');
+            const setActiveButton = (activeBtn) => {
+                navButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                activeBtn.classList.add('active');
+            };
 
-            // Data
-            const resetAppBtn = document.getElementById('reset-app-btn');
-            const exportDataBtn = document.getElementById('export-data-btn');
-            const importDataBtn = document.getElementById('import-data-btn');
-            const importFileInput = document.getElementById('import-file-input');
+            const updateActionButton = () => {
+                const isUpdate = currentSnippetIndex !== null;
+                actionBtn.textContent = isUpdate ? 'Update' : 'Save';
+                actionBtn.classList.toggle('bg-green-600', isUpdate);
+                actionBtn.classList.toggle('hover:bg-green-700', isUpdate);
+                actionBtn.classList.toggle('bg-orange-500', !isUpdate);
+                actionBtn.classList.toggle('hover:bg-orange-600', !isUpdate);
+            };
             
-            // Modal
-            const alertModal = document.getElementById('alert-modal');
-            const alertTitle = document.getElementById('alert-title');
-            const alertMessage = document.getElementById('alert-message');
-            const alertActions = document.getElementById('alert-actions');
+            const showToast = (message) => {
+                toast.textContent = message;
+                toast.classList.add('toast-enter-active');
+                toast.classList.remove('opacity-0', 'toast-exit-active');
 
-            // --- INITIALIZATION ---
-            const init = () => {
-                loadSettings();
-                updatePointsDisplay();
-                resetTimer();
-                splashScreen.addEventListener('animationend', () => {
-                    splashScreen.style.display = 'none';
+                setTimeout(() => {
+                    toast.classList.remove('toast-enter-active');
+                    toast.classList.add('toast-exit-active');
+                    setTimeout(() => {
+                        toast.classList.add('opacity-0');
+                    }, 200);
+                }, 2000);
+            };
+
+            const showModal = (modal, content) => {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                setTimeout(() => {
+                    content.classList.remove('scale-95', 'opacity-0');
+                }, 10);
+            };
+
+            const hideModal = (modal, content, callback) => {
+                content.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    modal.classList.remove('flex');
+                    modal.classList.add('hidden');
+                    if(callback) callback();
+                }, 300);
+            };
+
+            // --- Storage and Rendering (Unchanged) ---
+            const saveDropletsToStorage = () => localStorage.setItem('html_droplets_v2', JSON.stringify(droplets));
+            const saveTemplatesToStorage = () => localStorage.setItem('custom_templates_v1', JSON.stringify(customTemplates));
+            
+            const loadDropletsFromStorage = () => {
+                const data = localStorage.getItem('html_droplets_v2');
+                droplets = data ? JSON.parse(data) : [];
+                droplets.forEach((d, i) => {
+                    if (!d.title) d.title = `Untitled Snippet #${droplets.length - i}`;
                 });
             };
 
-            // --- LOCAL STORAGE & SETTINGS ---
-            const saveSettings = () => {
-                const settings = {
-                    points: points,
-                    theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
-                    textSize: document.documentElement.style.getPropertyValue('--font-scale'),
-                    pomodoroDurationKey: pomodoroSlider.value,
-                    breakDurationKey: breakSlider.value
-                };
-                localStorage.setItem('cronoTrackSettings', JSON.stringify(settings));
+            const loadTemplatesFromStorage = () => {
+                const data = localStorage.getItem('custom_templates_v1');
+                customTemplates = data ? JSON.parse(data) : [];
             };
 
-            const loadSettings = () => {
-                // Set defaults first
-                document.documentElement.classList.add('dark');
-                document.documentElement.style.setProperty('--font-scale', '1.0');
-                updateThemeToggleUI();
-                
-                const settings = JSON.parse(localStorage.getItem('cronoTrackSettings'));
-                if (settings) {
-                    points = settings.points || 0;
-                    
-                    // Theme - apply only if it's 'light' since dark is default
-                    if (settings.theme === 'light') {
-                        document.documentElement.classList.remove('dark');
-                    }
-                    updateThemeToggleUI();
+            const renderTemplateOptions = () => {
+                const existingOptions = templateSelect.querySelectorAll('option:not([value="default"]):not([value="tailwind"]):not([value="skeleton"])');
+                existingOptions.forEach(opt => opt.remove());
 
-                    // Text Size
-                    const textSize = settings.textSize || '1.0';
-                    document.documentElement.style.setProperty('--font-scale', textSize);
-                    textSizeSlider.value = parseFloat(textSize);
-
-                    // Timer durations
-                    pomodoroSlider.value = settings.pomodoroDurationKey || 2;
-                    breakSlider.value = settings.breakDurationKey || 1;
-                }
-                
-                updatePomodoroSliderDisplay();
-                updateBreakSliderDisplay();
-            };
-
-            const resetAppSettings = () => {
-                localStorage.removeItem('cronoTrackSettings');
-                points = 0;
-                pomodoroSlider.value = 2;
-                breakSlider.value = 1;
-                textSizeSlider.value = 1.0;
-                // Reload settings to apply defaults
-                loadSettings();
-                resetTimer();
-                updatePointsDisplay();
-            };
-
-            // --- UI FUNCTIONS ---
-            const updateTimerDisplay = () => {
-                const minutes = Math.floor(timeLeft / 60);
-                const seconds = timeLeft % 60;
-                timerDisplay.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-                
-                const progress = (totalTime - timeLeft) / totalTime;
-                const circumference = 2 * Math.PI * 52; // 2 * pi * radius
-                timerProgress.style.strokeDashoffset = circumference * (1 - progress);
-            };
-
-            const updatePointsDisplay = () => {
-                pointsDisplay.textContent = points;
-            };
-
-            const toggleMenu = () => {
-                sideMenu.classList.toggle('open');
-                backdrop.classList.toggle('open');
-            };
-
-            const showPage = (pageId) => {
-                let foundPage = false;
-                pages.forEach(page => {
-                    if (page.id === pageId) {
-                        page.classList.remove('hidden');
-                        page.classList.add('page-fade-in');
-                        foundPage = true;
-                    } else {
-                        page.classList.add('hidden');
-                        page.classList.remove('page-fade-in');
-                    }
+                customTemplates.forEach((template, index) => {
+                    const opt = document.createElement('option');
+                    opt.value = `custom_${index}`;
+                    opt.textContent = `[Template] ${template.title}`;
+                    templateSelect.appendChild(opt);
                 });
-                if(foundPage) toggleMenu();
-            };
-
-            const updatePlayPauseIcon = (state) => {
-                if (state === 'running') {
-                    playIcon.classList.add('hidden');
-                    pauseIcon.classList.remove('hidden');
-                } else {
-                    playIcon.classList.remove('hidden');
-                    pauseIcon.classList.add('hidden');
-                }
             };
             
-            const updateThemeToggleUI = () => {
-                if (document.documentElement.classList.contains('dark')) {
-                    themeToggle.classList.add('bg-blue-500');
-                    themeToggle.classList.remove('bg-gray-300');
-                    themeToggleIndicator.classList.add('translate-x-6');
-                } else {
-                    themeToggle.classList.remove('bg-blue-500');
-                    themeToggle.classList.add('bg-gray-300');
-                    themeToggleIndicator.classList.remove('translate-x-6');
-                }
-            };
-
-            const updatePomodoroSliderDisplay = () => {
-                 const minutes = pomodoroDurations[pomodoroSlider.value] / 60;
-                 pomodoroSliderValue.textContent = `${minutes} min`;
-                 if(timerState === 'stopped' && timerMode === 'pomodoro') resetTimer();
-            };
-
-            const updateBreakSliderDisplay = () => {
-                const minutes = breakDurations[breakSlider.value] / 60;
-                breakSliderValue.textContent = `${minutes} min`;
-                if(timerState === 'stopped' && timerMode === 'break') resetTimer();
-            };
-            
-            const showAlert = (title, message, actions) => {
-                alertTitle.textContent = title;
-                alertMessage.textContent = message;
-                alertActions.innerHTML = ''; // Clear previous actions
-                
-                actions.forEach(action => {
-                    const button = document.createElement('button');
-                    button.textContent = action.text;
-                    button.className = action.class || 'flex-1 p-3 rounded-lg font-bold active:opacity-80';
-                    button.onclick = () => {
-                        alertModal.classList.add('hidden');
-                        if(action.callback) action.callback();
-                    };
-                    alertActions.appendChild(button);
-                });
-                
-                alertModal.classList.remove('hidden');
-            };
-
-
-            // --- TIMER LOGIC ---
-            const startTimer = () => {
-                if (timerState === 'running') return;
-                timerState = 'running';
-                updatePlayPauseIcon('running');
-                
-                timerInterval = setInterval(() => {
-                    timeLeft--;
-                    updateTimerDisplay();
-                    if (timeLeft <= 0) {
-                        clearInterval(timerInterval);
-                        handleTimerCompletion();
-                    }
-                }, 1000);
-            };
-
-            const pauseTimer = () => {
-                if (timerState !== 'running') return;
-                clearInterval(timerInterval);
-                timerState = 'paused';
-                updatePlayPauseIcon('paused');
-            };
-            
-            const startPauseToggle = () => {
-                if(timerState === 'running') {
-                    pauseTimer();
-                } else {
-                    startTimer();
-                }
-            };
-
-            const resetTimer = () => {
-                clearInterval(timerInterval);
-                timerState = 'stopped';
-                if (timerMode === 'pomodoro') {
-                    totalTime = timeLeft = pomodoroDurations[pomodoroSlider.value];
-                } else {
-                    totalTime = timeLeft = breakDurations[breakSlider.value];
-                }
-                updatePlayPauseIcon('stopped');
-                updateTimerDisplay();
-            };
-
-            const handleTimerCompletion = () => {
-                // Play a subtle notification sound
-                new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'+Array(3e3).join('123')).play();
-                
-                if (timerMode === 'pomodoro') {
-                    const minutes = pomodoroDurations[pomodoroSlider.value] / 60;
-                    const earnedPoints = Math.floor(minutes / 3);
-                    points += earnedPoints;
-                    updatePointsDisplay();
-                    saveSettings();
-                    showAlert('Focus Complete!', `You earned ${earnedPoints} points. Time for a break!`, [
-                        { text: 'Start Break', class: 'flex-1 p-3 rounded-lg font-bold bg-blue-500 text-white', callback: () => switchMode('break') }
-                    ]);
-                    switchMode('break', false); // Switch mode but don't auto-start
-                } else {
-                    showAlert('Break Over!', 'Ready for another focus session?', [
-                        { text: 'Start Focus', class: 'flex-1 p-3 rounded-lg font-bold bg-blue-500 text-white', callback: () => switchMode('pomodoro') }
-                    ]);
-                    switchMode('pomodoro', false); // Switch mode but don't auto-start
-                }
-            };
-            
-            const skipTimer = () => {
-                showAlert('Skip Session?', `Are you sure you want to skip this ${timerMode} session?`, [
-                    { text: 'Cancel', class: 'flex-1 p-3 rounded-lg bg-gray-500/20' },
-                    { text: 'Skip', class: 'flex-1 p-3 rounded-lg bg-red-500 text-white', callback: () => {
-                        if (timerMode === 'pomodoro') {
-                           switchMode('break');
-                        } else {
-                           switchMode('pomodoro');
-                        }
-                    }}
-                ]);
-            };
-
-            const switchMode = (mode, autoStart = true) => {
-                timerMode = mode;
-                if (mode === 'pomodoro') {
-                    timerModeDisplay.textContent = 'Focus';
-                } else {
-                    timerModeDisplay.textContent = 'Break';
-                }
-                resetTimer();
-                if (autoStart) startTimer();
-            };
-            
-
-            // --- DATA HANDLING ---
-            const exportData = () => {
-                const data = localStorage.getItem('cronoTrackSettings');
-                if (!data) {
-                    showAlert('No Data', 'There is no data to export.', [{text: 'OK', class: 'flex-1 p-3 rounded-lg bg-blue-500 text-white'}]);
+            const renderDroplets = () => {
+                dropletsList.innerHTML = '';
+                if (droplets.length === 0) {
+                    dropletsList.innerHTML = `<p class="text-gray-500 text-center p-4 w-full">No snippets saved yet. Tap 'New' or load a template!</p>`;
                     return;
                 }
-                const blob = new Blob([data], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `crono-track-backup-${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                
+                [...droplets].reverse().forEach((droplet, reversedIndex) => {
+                    const originalIndex = droplets.length - 1 - reversedIndex;
+                    const el = document.createElement('div');
+                    el.className = 'snippet-card-wrapper flex-shrink-0 w-[80%] sm:w-80 h-full cursor-pointer snap-center';
+                    
+                    el.innerHTML = `
+                        <div data-index="${originalIndex}" class="snippet-card h-full rounded-xl shadow-xl border-t-4 overflow-hidden flex flex-col transition-all duration-300 hover:scale-[1.02]">
+                            <div class="p-3 flex-shrink-0">
+                                <p class="font-bold text-base truncate text-gray-200">${droplet.title}</p>
+                                <p class="text-xs text-gray-500 mt-1">${new Date(droplet.id).toLocaleDateString()}</p>
+                            </div>
+                            <div class="flex-grow snippet-card-preview">
+                                <iframe srcdoc="${droplet.html.replace(/"/g, '&quot;')}" class="w-full h-full border-0 bg-white"></iframe>
+                            </div>
+                        </div>
+                    `;
+                    dropletsList.appendChild(el);
+                });
             };
 
-            const importData = (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
+            // --- UI/Navigation Control ---
 
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const importedSettings = JSON.parse(e.target.result);
-                        // Basic validation
-                        if ('points' in importedSettings && 'theme' in importedSettings) {
-                           localStorage.setItem('cronoTrackSettings', e.target.result);
-                           loadSettings();
-                           resetTimer();
-                           updatePointsDisplay();
-                           showAlert('Success!', 'Your data has been imported successfully.', [{text: 'Great!', class: 'flex-1 p-3 rounded-lg bg-blue-500 text-white'}]);
-                        } else {
-                           throw new Error('Invalid file format.');
-                        }
-                    } catch (error) {
-                        showAlert('Import Failed', 'The selected file is not a valid CronoTrack backup.', [{text: 'OK', class: 'flex-1 p-3 rounded-lg bg-red-500 text-white'}]);
-                    }
+            const enterFullscreen = () => {
+                topBar.classList.add('toolbar-hidden');
+                bottomNav.classList.add('toolbar-hidden');
+                
+                // FIX: Ensure full height and proper flex context
+                previewContainer.classList.add('fullscreen-preview');
+                
+                document.getElementById('fullscreenBtn').classList.add('hidden');
+                slimBar.style.display = 'flex';
+                quickActionBar.classList.add('hidden');
+                
+                // FIX: Set preview height based on slimBar height
+                preview.style.height = `calc(100% - ${slimBar.offsetHeight}px)`;
+            };
+
+            const exitFullscreen = () => {
+                topBar.classList.remove('toolbar-hidden');
+                bottomNav.classList.remove('toolbar-hidden');
+                
+                // FIX: Remove fullscreen class
+                previewContainer.classList.remove('fullscreen-preview');
+                
+                document.getElementById('fullscreenBtn').classList.remove('hidden');
+                slimBar.style.display = 'none';
+                preview.style.height = '100%';
+            };
+            
+            const showDroplets = () => {
+                renderDroplets();
+                renderTemplateOptions();
+                dropletsPanel.classList.remove('translate-y-full', 'opacity-0', 'panel-exit-active');
+                dropletsPanel.classList.add('panel-enter-active');
+                exitFullscreen();
+            };
+            
+            const hideDroplets = () => {
+                dropletsPanel.classList.remove('panel-enter-active');
+                dropletsPanel.classList.add('panel-exit-active');
+                setTimeout(() => {
+                    dropletsPanel.classList.add('translate-y-full', 'opacity-0');
+                    dropletsPanel.classList.remove('panel-exit-active');
+                }, 300);
+            };
+            
+            // --- Save/Update & Rename Logic (Unchanged) ---
+            const promptSaveAsTemplate = (index) => {
+                const snippet = droplets[index];
+                saveModalTitle.textContent = 'Save as Custom Template';
+                snippetTitleInput.value = snippet.title;
+                showModal(saveModal, saveModalContent);
+                
+                document.getElementById('confirmSaveBtn').textContent = "Save Template";
+                document.getElementById('confirmSaveBtn').onclick = () => {
+                    const templateTitle = snippetTitleInput.value.trim() || `Untitled Template`;
+                    customTemplates.push({ id: Date.now(), title: templateTitle, html: snippet.html });
+                    saveTemplatesToStorage();
+                    hideModal(saveModal, saveModalContent, () => {
+                        showToast(`Saved '${templateTitle}' as a new template!`);
+                        renderTemplateOptions();
+                    });
+                    
+                    document.getElementById('confirmSaveBtn').onclick = performSaveOrUpdate;
+                    document.getElementById('confirmSaveBtn').textContent = (currentSnippetIndex !== null) ? "Update Snippet" : "Save Snippet";
                 };
-                reader.readAsText(file);
-                // Reset file input to allow re-importing the same file
-                importFileInput.value = '';
             };
 
+            const performSaveOrUpdate = () => {
+                const code = editor.value.trim();
+                const title = snippetTitleInput.value.trim() || `Untitled Snippet`;
 
-            // --- EVENT LISTENERS ---
-            menuBtn.addEventListener('click', toggleMenu);
-            closeMenuBtn.addEventListener('click', toggleMenu);
-            backdrop.addEventListener('click', toggleMenu);
+                if (currentSnippetIndex !== null) {
+                    droplets[currentSnippetIndex].title = title;
+                    droplets[currentSnippetIndex].html = code;
+                    saveDropletsToStorage();
+                    hideModal(saveModal, saveModalContent, () => {
+                        showToast(`'${title}' updated.`);
+                    });
+                } else {
+                    droplets.unshift({ id: Date.now(), title: title, html: code });
+                    currentSnippetIndex = 0; 
+                    saveDropletsToStorage();
+                    hideModal(saveModal, saveModalContent, () => {
+                        showToast(`'${title}' saved!`);
+                    });
+                }
+                updateActionButton();
+                updateTitle();
+            };
+            
+            // --- Editor Feature Logic (Unchanged) ---
+            const handleEditorInput = (e) => {
+                updatePreview();
 
-            navLinks.forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    showPage(e.target.dataset.page);
+                const text = editor.value;
+                const caretPos = editor.selectionStart;
+
+                const autoCloseMap = {
+                    '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '<': '>'
+                };
+
+                const lastChar = text.substring(caretPos - 1, caretPos);
+                if (autoCloseMap[lastChar] && text.substring(caretPos, caretPos + 1) !== autoCloseMap[lastChar]) {
+                    const closingChar = autoCloseMap[lastChar];
+                    editor.value = text.substring(0, caretPos) + closingChar + text.substring(caretPos);
+                    editor.selectionStart = editor.selectionEnd = caretPos;
+                }
+            };
+            
+            const handleQuickAction = (char) => {
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+                let newText = char;
+                let newPos = start + newText.length;
+                
+                if (char === 'Tab') {
+                    newText = '  '; 
+                } else if (char === '&') {
+                    newText = '&amp;';
+                    newPos = start + 1; 
+                } else if (char === '<') {
+                    newText = '<>'; 
+                    newPos = start + 1;
+                }
+
+                editor.value = editor.value.substring(0, start) + newText + editor.value.substring(end);
+                editor.selectionStart = editor.selectionEnd = newPos;
+                editor.focus();
+                updatePreview();
+            };
+
+            // --- Easter Egg REMOVAL ---
+            // The logic for 'goToEditorBtn' long-press has been removed.
+            
+            // --- Event Listeners ---
+            document.getElementById('actionBtn').addEventListener('click', () => {
+                document.getElementById('confirmSaveBtn').onclick = performSaveOrUpdate;
+                document.getElementById('confirmSaveBtn').textContent = (currentSnippetIndex !== null) ? "Update Snippet" : "Save Snippet";
+                
+                const code = editor.value.trim();
+                if (!code) {
+                    showToast('Editor is empty! Cannot save or update.');
+                    return;
+                }
+                
+                const isUpdate = currentSnippetIndex !== null;
+                saveModalTitle.textContent = isUpdate ? 'Update Snippet' : 'Save New Snippet';
+                
+                if (isUpdate) {
+                    snippetTitleInput.value = droplets[currentSnippetIndex].title;
+                } else {
+                    const defaultTitle = editor.value.match(/<title>(.*?)<\/title>/i)
+                        ? editor.value.match(/<title>(.*?)<\/title>/i)[1].trim()
+                        : `New Snippet ${droplets.length + 1}`;
+                    snippetTitleInput.value = defaultTitle;
+                }
+                showModal(saveModal, saveModalContent);
+            });
+            
+            document.getElementById('cancelSaveBtn').addEventListener('click', () => { hideModal(saveModal, saveModalContent); });
+            document.getElementById('fullscreenBtn').addEventListener('click', enterFullscreen);
+            
+            // FIX: Slim Navbar Functionality is now perfect
+            slimExitBtn.addEventListener('click', () => { 
+                exitFullscreen(); 
+                editBtn.click(); // Switch back to editor view
+            });
+            slimReloadBtn.addEventListener('click', () => { 
+                updatePreview(); 
+                showToast('Preview Reloaded'); 
+            });
+
+            document.getElementById('closeDropletsBtn').addEventListener('click', hideDroplets);
+
+            editor.addEventListener('input', handleEditorInput);
+            
+            editor.addEventListener('focus', () => quickActionBar.classList.remove('hidden'));
+            editor.addEventListener('blur', () => {
+                if (saveModal.classList.contains('hidden') && contextMenuModal.classList.contains('hidden')) {
+                    setTimeout(() => quickActionBar.classList.add('hidden'), 100); 
+                }
+            });
+            
+            quickActionBar.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault(); 
+                    handleQuickAction(e.target.textContent);
                 });
             });
             
-            startPauseBtn.addEventListener('click', startPauseToggle);
-            resetBtn.addEventListener('click', resetTimer);
-            skipBtn.addEventListener('click', skipTimer);
+            loadTemplateBtn.addEventListener('click', () => {
+                const templateKey = templateSelect.value;
+                
+                let htmlToLoad;
+                if (baseTemplates[templateKey]) {
+                    htmlToLoad = baseTemplates[templateKey];
+                } else if (templateKey.startsWith('custom_')) {
+                    const index = parseInt(templateKey.split('_')[1]);
+                    htmlToLoad = customTemplates[index].html;
+                }
 
-            pomodoroSlider.addEventListener('input', updatePomodoroSliderDisplay);
-            pomodoroSlider.addEventListener('change', saveSettings);
-            breakSlider.addEventListener('input', updateBreakSliderDisplay);
-            breakSlider.addEventListener('change', saveSettings);
+                editor.value = htmlToLoad;
+                currentSnippetIndex = null;
+                updatePreview();
+                updateActionButton();
+                hideDroplets();
+                editBtn.click();
+                showToast('Template loaded.');
+            });
+
+            // --- Navigation Handlers ---
+            document.getElementById('editBtn').addEventListener('click', () => {
+                exitFullscreen();
+                editorWrapper.classList.remove('hidden');
+                previewContainer.classList.add('hidden');
+                setActiveButton(editBtn);
+            });
             
-            // Settings listeners
-            themeToggle.addEventListener('click', () => {
-                document.documentElement.classList.toggle('dark');
-                updateThemeToggleUI();
-                saveSettings();
+            document.getElementById('previewBtn').addEventListener('click', () => {
+                exitFullscreen();
+                updatePreview();
+                editorWrapper.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+                setActiveButton(previewBtn);
             });
             
-            textSizeSlider.addEventListener('input', (e) => {
-                document.documentElement.style.setProperty('--font-scale', e.target.value);
+            document.getElementById('dropletsBtn').addEventListener('click', () => {
+                hideModal(contextMenuModal, contextMenuContent);
+                showDroplets();
+                setActiveButton(dropletsBtn);
             });
-            textSizeSlider.addEventListener('change', (e) => {
-                document.documentElement.style.setProperty('--font-scale', e.target.value);
-                saveSettings();
+            
+            document.getElementById('newDropletBtn').addEventListener('click', () => {
+                editor.value = baseTemplates.default;
+                currentSnippetIndex = null;
+                updatePreview();
+                updateActionButton();
+                hideDroplets();
+                editBtn.click();
             });
 
-            // Data listeners
-            resetAppBtn.addEventListener('click', () => {
-                 showAlert('Reset App?', 'All your points and settings will be permanently deleted. This cannot be undone.', [
-                    { text: 'Cancel', class: 'flex-1 p-3 rounded-lg bg-gray-500/20' },
-                    { text: 'Reset', class: 'flex-1 p-3 rounded-lg bg-red-500 text-white', callback: resetAppSettings}
-                ]);
+            // FIX: Editor button now works normally (Easter egg code removed)
+            document.getElementById('goToEditorBtn').addEventListener('click', () => {
+                document.getElementById('homeScreen').classList.add('hidden');
+                document.getElementById('appContainer').classList.remove('hidden');
+                document.getElementById('appContainer').classList.add('flex');
+                editBtn.click(); 
             });
-            exportDataBtn.addEventListener('click', exportData);
-            importDataBtn.addEventListener('click', () => importFileInput.click());
-            importFileInput.addEventListener('change', importData);
+            
+            document.getElementById('goToDropletsBtn').addEventListener('click', () => {
+                document.getElementById('homeScreen').classList.add('hidden');
+                document.getElementById('appContainer').classList.remove('hidden');
+                document.getElementById('appContainer').classList.add('flex');
+                showDroplets();
+                setActiveButton(dropletsBtn);
+            });
+            
+            document.getElementById('homeBtn').addEventListener('click', () => {
+                document.getElementById('homeScreen').classList.remove('hidden');
+                document.getElementById('appContainer').classList.add('hidden');
+                document.getElementById('appContainer').classList.remove('flex');
+                exitFullscreen();
+            });
+            
+            // --- Context Menu Handlers (Tap/Long Press) ---
+            document.getElementById('contextLoadBtn').addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                editor.value = droplets[index].html;
+                currentSnippetIndex = index;
+                updatePreview();
+                updateActionButton();
+                hideModal(contextMenuModal, contextMenuContent);
+                hideDroplets();
+                editBtn.click(); 
+                showToast(`Loaded '${droplets[index].title}'`);
+            });
+            document.getElementById('contextRenameBtn').addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                const snippet = droplets[index];
+                saveModalTitle.textContent = 'Rename Snippet';
+                snippetTitleInput.value = snippet.title;
+                showModal(saveModal, saveModalContent);
+                
+                document.getElementById('confirmSaveBtn').textContent = "Confirm Rename";
+                document.getElementById('confirmSaveBtn').onclick = () => {
+                    const newTitle = snippetTitleInput.value.trim() || `Untitled Snippet`;
+                    droplets[index].title = newTitle;
+                    saveDropletsToStorage();
+                    hideModal(saveModal, saveModalContent, () => {
+                        showToast(`Snippet renamed to '${newTitle}'`);
+                        renderDroplets();
+                        if (currentSnippetIndex === index) updateTitle();
+                    });
+                    document.getElementById('confirmSaveBtn').onclick = performSaveOrUpdate;
+                    document.getElementById('confirmSaveBtn').textContent = (currentSnippetIndex !== null) ? "Update Snippet" : "Save Snippet";
+                };
+                hideModal(contextMenuModal, contextMenuContent);
+            });
+            
+            document.getElementById('contextAsTemplateBtn').addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                hideModal(contextMenuModal, contextMenuContent, () => promptSaveAsTemplate(index));
+            });
 
-            // --- RUN APP ---
+            document.getElementById('contextDeleteBtn').addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                const title = droplets[index].title;
+                droplets.splice(index, 1);
+                saveDropletsToStorage();
+                
+                if (currentSnippetIndex === index) {
+                    editor.value = baseTemplates.default;
+                    currentSnippetIndex = null;
+                    updatePreview();
+                    updateActionButton();
+                } else if (currentSnippetIndex !== null && currentSnippetIndex > index) {
+                    currentSnippetIndex--;
+                }
+
+                hideModal(contextMenuModal, contextMenuContent, () => {
+                    showToast(`Deleted snippet '${title}'`);
+                    renderDroplets();
+                });
+            });
+
+            // Droplets Card Interaction (Tap/Long Press)
+            dropletsList.addEventListener('mousedown', handleCardStart);
+            dropletsList.addEventListener('touchstart', handleCardStart);
+            dropletsList.addEventListener('mouseup', handleCardEnd);
+            dropletsList.addEventListener('touchend', handleCardEnd);
+            
+            function handleCardStart(e) {
+                const card = e.target.closest('.snippet-card');
+                if (card) {
+                    e.preventDefault();
+                    const index = parseInt(card.dataset.index);
+                    longPressTimer = setTimeout(() => {
+                        longPressTimer = null;
+                        
+                        document.getElementById('contextLoadBtn').dataset.index = index;
+                        document.getElementById('contextRenameBtn').dataset.index = index;
+                        document.getElementById('contextAsTemplateBtn').dataset.index = index;
+                        document.getElementById('contextExportBtn').dataset.index = index;
+                        document.getElementById('contextDeleteBtn').dataset.index = index;
+
+                        hideDroplets();
+                        showModal(contextMenuModal, contextMenuContent);
+                    }, LONG_PRESS_DURATION_CONTEXT);
+                }
+            }
+
+            function handleCardEnd(e) {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                    
+                    const card = e.target.closest('.snippet-card');
+                    if (card) {
+                        const index = parseInt(card.dataset.index);
+                        
+                        editor.value = droplets[index].html;
+                        currentSnippetIndex = index;
+                        updatePreview();
+                        updateActionButton();
+                        
+                        hideDroplets();
+                        
+                        editorWrapper.classList.add('hidden');
+                        previewContainer.classList.remove('hidden');
+                        setActiveButton(previewBtn);
+                        
+                        // FIX: Ensure fullscreen is only entered if the long press didn't happen
+                        // A quick tap (longPressTimer cancelled immediately) should lead to fullscreen preview
+                        enterFullscreen(); 
+                    }
+                }
+            }
+            // Add handler for scroll/move to cancel long press
+            dropletsList.addEventListener('scroll', handleCardMove);
+            dropletsList.addEventListener('touchmove', handleCardMove);
+            function handleCardMove() {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+            }
+            // --- Initialization ---
+            const init = () => {
+                loadDropletsFromStorage();
+                loadTemplatesFromStorage();
+                
+                if (droplets.length > 0) {
+                    editor.value = droplets[0].html;
+                    currentSnippetIndex = 0;
+                } else {
+                    editor.value = baseTemplates.default;
+                    currentSnippetIndex = null;
+                }
+                
+                updatePreview();
+                updateActionButton();
+                setActiveButton(editBtn);
+                previewContainer.classList.add('hidden');
+                editorWrapper.classList.remove('hidden');
+                renderTemplateOptions(); 
+            };
+
             init();
         });
     </script>
 </body>
 </html>
-
