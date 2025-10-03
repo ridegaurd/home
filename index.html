@@ -3,995 +3,882 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Noteworthy: Cloud Notes App</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    
+    <title>Chaticular - Expressive Messenger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': 'var(--color-primary)',
+                        'surface-deep': 'var(--color-surface)',
+                        'panel-bg': 'var(--color-background)',
+                        'text-main': 'var(--color-on-surface)',
+                        'text-muted': 'var(--color-on-surface-variant)',
+                        'bubble-self': 'var(--color-bubble-self)',
+                        'bubble-other': 'var(--color-bubble-other)',
+                        'input-bg': 'var(--color-input-bg)',
+                        'border-color': 'var(--color-border)',
+                        'hover-bg': 'var(--color-hover-bg)',
+                        'error': 'var(--color-error)',
+                    },
+                }
+            }
+        }
+    </script>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+
     <style>
-        /* ========================================================================= */
-        /* --- COPY/PASTE THE ENTIRE CSS BLOCK FROM THE PREVIOUS RESPONSE HERE --- */
-        /* ========================================================================= */
+        /* --- Core Theme Variables (DARK THEME DEFAULT) --- */
         :root {
-            /* Color Palette: Modern and Clean */
-            --color-bg-light: #f4f6f9; /* Off-white, airy background */
-            --color-paper-light: #ffffff;
-            --color-text-light: #181c20;
-            --color-accent: #2e7d32; /* Deep Green for a calming, focused feel */
-            --color-accent-hover: #1b5e20;
-            --color-sidebar-bg-light: #e9ecef;
-            --color-secondary-text: #6c757d;
-            
-            --color-bg-dark: #121212; /* True black */
-            --color-paper-dark: #1e1e1e; /* Dark gray for notes */
-            --color-text-dark: #f0f0f0;
-            --color-sidebar-bg-dark: #2c2c2c;
-            
-            --border-radius: 8px;
-            --padding-lg: 20px;
-            --transition-time: 0.3s;
+            /* Vibrant, expressive colors */
+            --color-primary: #8B5CF6; /* Violet */
+            --color-surface: #0A0A0A; /* Deep Background (Outside App) */
+            --color-background: #18181B; /* Panel Background (Slightly Lighter) */
+            --color-on-surface: #F0F0F0; /* Main Text */
+            --color-on-surface-variant: #A1A1AA; /* Muted Text */
+            --color-error: #EF4444; /* Red */
+            --color-bubble-self: var(--color-primary);
+            --color-on-bubble-self: #FFFFFF;
+            --color-bubble-other: #27272A; /* Other person's message bubble */
+            --color-on-bubble-other: var(--color-on-surface);
+            --color-input-bg: #2C2C30;
+            --color-border: #3F3F46;
+            --color-hover-bg: #27272A;
+            --transition-speed: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            transition: background-color var(--transition-time), color var(--transition-time), border-color var(--transition-time), box-shadow var(--transition-time); 
+        /* --- LIGHT THEME OVERRIDES --- */
+        body.light-theme {
+            --color-surface: #F4F4F5;
+            --color-background: #FFFFFF;
+            --color-on-surface: #18181B;
+            --color-on-surface-variant: #71717A;
+            --color-bubble-other: #E4E4E7;
+            --color-on-bubble-other: #18181B;
+            --color-input-bg: #F9F9FB;
+            --color-border: #E5E5E5;
+            --color-hover-bg: #F3F4F6;
+            --color-primary: #5A67D8; /* Slightly darker primary for visibility */
         }
 
-        /* --- MODE VARIABLES --- */
-        .light-mode {
-            --color-bg: var(--color-bg-light);
-            --color-paper: var(--color-paper-light);
-            --color-text: var(--color-text-light);
-            --color-sidebar-bg: var(--color-sidebar-bg-light);
-        }
-
-        .dark-mode {
-            --color-bg: var(--color-bg-dark);
-            --color-paper: var(--color-paper-dark);
-            --color-text: var(--color-text-dark);
-            --color-sidebar-bg: var(--color-sidebar-bg-dark);
-        }
-
+        /* --- Global Setup & Transitions --- */
         body {
-            background-color: var(--color-bg);
-            color: var(--color-text);
-            height: 100vh;
-            display: flex;
-            overflow: hidden;
-            align-items: center;
-            justify-content: center;
+            transition: background-color var(--transition-speed);
+            background-color: var(--color-surface);
+        }
+        * {
+            transition: color var(--transition-speed), background-color var(--transition-speed);
         }
 
-        #app-container {
-            display: flex;
-            width: 100%;
-            height: 100%;
-            position: absolute;
-        }
-
-        /* --- HOME SCREEN (AUTH) STYLES --- */
-        #auth-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--color-bg);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 5000;
-        }
-
-        .auth-container {
-            background: var(--color-paper);
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            width: 400px;
-            text-align: center;
-        }
-
-        .auth-container h1 {
-            font-size: 3em;
-            color: var(--color-accent);
-            margin-bottom: 30px;
-            font-weight: 800;
-        }
-
-        .auth-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 12px 20px;
-            margin-bottom: 15px;
-            border: 1px solid var(--color-sidebar-bg);
-            border-radius: var(--border-radius);
-            font-size: 1.1em;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .auth-button:hover {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .google-auth {
-            background-color: var(--color-paper);
-            color: var(--color-text);
-        }
-        .google-auth i {
-            color: #db4437; /* Google red */
-            margin-right: 10px;
-        }
-
-        .email-auth {
-            background-color: var(--color-accent);
-            color: white;
-            border-color: var(--color-accent);
-        }
-        .email-auth i {
-            margin-right: 10px;
-        }
-
-        .separator {
-            margin: 20px 0;
-            color: var(--color-secondary-text);
-            position: relative;
-        }
-        .separator::before, .separator::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 40%;
-            height: 1px;
-            background: var(--color-sidebar-bg);
-        }
-        .separator::before { left: 0; }
-        .separator::after { right: 0; }
-        
-        /* Limited Account Hint */
-        .limited-hint {
-            font-size: 0.9em;
-            color: var(--color-secondary-text);
-            margin-top: -10px;
-            margin-bottom: 20px;
-        }
-
-
-        /* --- MAIN APP STYLES (Keep from previous version, adapted for hidden state) --- */
-        #sidebar {
-            width: 320px;
-            background-color: var(--color-sidebar-bg);
-            border-right: 1px solid var(--color-bg);
-            display: flex;
-            flex-direction: column;
-            padding: var(--padding-lg);
-            flex-shrink: 0;
-        }
-
-        .sidebar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--padding-lg);
-        }
-
-        .sidebar-header h2 {
-            font-weight: 700;
-            color: var(--color-accent);
+        /* --- Application Layout (Mobile-First Sliding Panels) --- */
+        /* Use 100vh for height on mobile to cover the whole screen */
+        #main-app {
+            @apply w-full h-screen max-w-full bg-surface-deep flex relative overflow-hidden;
         }
         
-        #toggle-mode, .sidebar-action-btn {
-            background: var(--color-accent);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        #toggle-mode:hover, .sidebar-action-btn:hover {
-            background: var(--color-accent-hover);
-        }
-
-        .search-box {
-            display: flex;
-            align-items: center;
-            background-color: var(--color-paper);
-            border-radius: var(--border-radius);
-            padding: 10px 15px;
-            margin-bottom: 10px;
-            border: 1px solid transparent;
-        }
-        .search-box:focus-within {
-             border-color: var(--color-accent);
-        }
-        .search-box input {
-            flex-grow: 1;
-            border: none;
-            background: transparent;
-            color: var(--color-text);
-            outline: none;
-            margin-left: 10px;
-        }
-        .search-box i { color: var(--color-secondary-text); }
-        .search-box:focus-within i { color: var(--color-accent); }
-
-        #notes-list {
-            flex-grow: 1;
-            overflow-y: auto;
-            margin-top: 15px;
-        }
-
-        .note-item {
-            padding: 12px 15px; 
-            margin-bottom: 8px;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            background-color: transparent;
-            border: 1px solid transparent;
-            transition: all 0.2s;
-        }
-        .note-item:hover {
-            background-color: var(--color-paper);
-        }
-        .note-item.active {
-            background-color: var(--color-paper);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--color-accent);
-        }
-        .note-item h4 {
-            font-size: 17px;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .note-item small {
-            display: block;
-            font-size: 12px;
-            color: var(--color-secondary-text);
-        }
-        .sidebar-footer {
-            display: flex;
-            justify-content: space-around;
-            padding-top: 10px;
-            margin-top: 10px;
-            border-top: 1px solid var(--color-bg);
-        }
-        .sidebar-footer button {
-            background: none;
-            border: none;
-            color: var(--color-text);
-            cursor: pointer;
-            font-size: 1.2em;
-            padding: 5px;
-        }
-        .sidebar-footer button:hover {
-            color: var(--color-accent);
-        }
-
-
-        #main-content {
-            flex-grow: 1;
-            padding: var(--padding-lg) 0; 
-            display: flex;
-            flex-direction: column;
-            background-color: var(--color-paper);
-            position: relative;
-            overflow-y: auto; 
-        }
-
-        #editor-toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            padding: 0 var(--padding-lg) var(--padding-lg) var(--padding-lg);
-            margin-bottom: var(--padding-lg);
-            border-bottom: 1px solid var(--color-sidebar-bg);
-            position: sticky;
+        #contact-panel, #chat-panel {
+            position: absolute;
             top: 0;
-            background: var(--color-paper);
-            z-index: 10;
-        }
-
-        .format-buttons button, .export-actions button, #lock-note-btn, #focus-mode-btn {
-            background: none;
-            border: none;
-            color: var(--color-text);
-            padding: 8px;
-            margin-right: 5px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .format-buttons button:hover, .export-actions button:hover, #lock-note-btn:hover, #focus-mode-btn:hover {
-            background-color: var(--color-sidebar-bg);
-            color: var(--color-accent);
-        }
-
-        #tag-input, #export-format-select {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid var(--color-sidebar-bg);
-            background-color: var(--color-bg);
-            color: var(--color-text);
-            margin-left: 5px;
-            transition: all 0.2s;
-        }
-        #tag-input:focus, #export-format-select:focus {
-            border-color: var(--color-accent);
-            box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
+            bottom: 0;
+            width: 100%;
+            transition: transform var(--transition-speed);
+            @apply flex flex-col z-10 bg-panel-bg;
         }
         
-        .note-editor-container {
-            max-width: 800px; 
-            width: 100%;
-            margin: 0 auto;
-            padding: 0 var(--padding-lg);
-            flex-grow: 1;
+        #chat-panel {
+            transform: translateX(100%); /* Start chat off-screen */
+        }
+        
+        /* Mobile: View Chat State */
+        #main-app.view-chat #contact-panel {
+            transform: translateX(-100%);
+        }
+        #main-app.view-chat #chat-panel {
+            transform: translateX(0);
+            z-index: 20; 
+        }
+
+        /* FIX: Ensure Chat Panel content fills space correctly. */
+        #chat-active-content {
+            @apply flex-col flex-grow h-full;
+        }
+
+        /* FIX: Make the chat message container dynamic height, fixed bottom input */
+        /* Flex grow container inside a flex container (chat-active-content) */
+        #chat-message-container {
+            @apply flex-grow overflow-y-auto;
+            /* Calculate height: 100% of parent minus fixed header/input area heights */
+            /* Using min-h-0 is a flexbox trick to allow scrolling when content overflows */
+            min-height: 0; 
+        }
+
+        /* FIX: Fixed Input Area on Mobile */
+        /* On mobile, use absolute positioning to try and fix it below the keyboard effect */
+        @media (max-width: 767px) {
+            #chat-input-area {
+                position: absolute; /* Changed from default flow for mobile fix */
+                bottom: 0;
+                width: 100%;
+            }
+        }
+
+        /* --- Desktop View (768px+) --- */
+        @media (min-width: 768px) {
+            body { @apply p-6; }
+            #main-app {
+                /* Larger fixed size for desktop apps */
+                @apply w-[95vw] h-[90vh] max-w-[1400px] rounded-3xl shadow-2xl mx-auto;
+                position: static;
+            }
+            
+            /* Override Mobile Transitions for Flex layout */
+            #contact-panel, #chat-panel {
+                position: static;
+                transform: translateX(0) !important;
+                flex: none; 
+                width: auto;
+                @apply z-10;
+            }
+
+            #contact-panel {
+                @apply w-full border-r border-border-color;
+                flex-basis: 380px; 
+            }
+
+            #chat-panel {
+                @apply flex-grow;
+            }
+            
+            /* Desktop: Input area goes back to relative flow */
+            #chat-input-area {
+                position: relative !important;
+                bottom: auto !important;
+            }
+
+            /* Desktop Specific: Hide back button and always show content */
+            .chat-header-mobile-back { display: none !important; }
+            
+            /* The Empty state should take up the full height */
+            #chat-panel.empty-state {
+                @apply flex items-center justify-center;
+            }
+        }
+        
+        /* --- Message Bubble Styling --- */
+        .message {
+            /* Pop/Bounce Animation on Load */
+            animation: fadeIn 0.3s ease-out;
+            transform-origin: bottom;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.sender {
+            /* Unique, modern bubble shape */
+            border-radius: 1.25rem 1.25rem 0.375rem 1.25rem; 
+        }
+        
+        .message.receiver {
+            /* Unique, modern bubble shape */
+            border-radius: 1.25rem 1.25rem 1.25rem 0.375rem; 
+        }
+
+        /* Scrollbar styling for a cleaner look */
+        #chat-message-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-message-container::-webkit-scrollbar-thumb {
+            background-color: var(--color-border);
+            border-radius: 10px;
+        }
+
+        /* --- Touch Menu Styling (Revamped) --- */
+        .react-menu {
+            /* Use fixed position for proper touch menu behavior */
+            position: fixed !important; 
             display: flex;
             flex-direction: column;
+            padding: 0.75rem;
+            min-width: 280px; /* Set a minimum width for better appearance */
+        }
+        .react-menu .emoji-buttons button {
+             @apply p-3 text-2xl bg-hover-bg rounded-full hover:scale-110 active:scale-90 transition-all;
         }
 
-        #note-title {
-            font-size: 2.5em;
-            font-weight: 700;
-            border: none;
-            outline: none;
-            background: transparent;
-            color: var(--color-text);
-            margin-bottom: 15px;
-            width: 100%;
+        /* Ensure textarea doesn't overflow its max height */
+        #chat-message-input {
+            line-height: 1.5; /* Ensure consistent line height */
         }
-
-        #editor-body {
-            flex-grow: 1;
-            outline: none;
-            font-size: 1.1em;
-            line-height: 1.7;
-            padding-bottom: 50px;
-            min-height: 50vh;
-            /* Fluidic Typing Animation/Focus Effect */
-            transition: box-shadow 0.5s ease-out; 
-            border-radius: 4px;
-        }
-        #editor-body:focus {
-             box-shadow: 0 0 0 1px var(--color-accent);
-        }
-
-        [contenteditable="true"]:empty:before {
-            content: attr(data-placeholder);
-            color: var(--color-secondary-text);
-        }
-
-        .tag-chip {
-            display: inline-block;
-            background-color: var(--color-accent);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 16px;
-            font-size: 13px;
-            margin-right: 6px;
-            margin-bottom: 5px;
-            cursor: pointer;
-            opacity: 0.9;
-            transition: opacity 0.2s, transform 0.2s;
-        }
-        .tag-chip:hover { 
-            opacity: 1; 
-            transform: translateY(-1px);
-        }
-
-        /* Quick Action Menu */
-        #quick-action-menu {
-            position: absolute;
-            background: var(--color-paper);
-            border: 1px solid var(--color-sidebar-bg);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-            border-radius: var(--border-radius);
-            z-index: 1000;
-            padding: 5px;
-            width: 250px;
-        }
-        .quick-action-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: background 0.2s;
-        }
-        .quick-action-item:hover {
-            background: var(--color-sidebar-bg);
-            color: var(--color-accent);
-        }
-
-        /* Focus Mode */
-        #focus-mode-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--color-paper);
-            z-index: 2000;
-            padding: 50px;
-            display: none; 
-            flex-direction: column;
-            align-items: center;
-        }
-
-        #focus-content {
-            max-width: 900px;
-            width: 100%;
-            font-size: 1.3em;
-            line-height: 1.8;
-            padding-top: 50px;
-            outline: none;
-            transition: box-shadow 0.5s ease-out; 
-        }
-        #focus-content:focus {
-            box-shadow: 0 0 0 1px var(--color-accent);
-        }
-
-        #exit-focus-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 10px 15px;
-            background: var(--color-accent);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .hidden { display: none !important; }
     </style>
 </head>
-<body class="light-mode">
-    
-    <div id="auth-screen">
-        <div class="auth-container">
-            <h1>Noteworthy</h1>
-            <p style="margin-bottom: 25px; color: var(--color-secondary-text);">A modern, focused cloud note-taking experience.</p>
+<body class="dark-theme font-sans">
 
-            <button class="auth-button google-auth" id="google-sign-in-btn">
-                <i class="fab fa-google"></i> Sign in with Google
+    <div id="login-container" class="absolute inset-0 flex items-center justify-center p-4 bg-surface-deep transition-opacity duration-500 z-50">
+        <div class="p-8 bg-panel-bg rounded-3xl shadow-2xl w-full max-w-sm">
+            <h1 class="text-4xl font-extrabold text-primary mb-6 text-center tracking-tight">Chaticular</h1>
+            <p class="text-text-muted text-center mb-8">Secure, simple, and expressive messaging.</p>
+            
+            <input type="text" id="username" placeholder="Username" required 
+                   class="w-full p-4 text-lg rounded-xl bg-input-bg text-text-main border-2 border-transparent focus:border-primary focus:ring-2 focus:ring-primary/50 mb-4 transition-all" />
+            <input type="password" id="password" placeholder="Password" required 
+                   class="w-full p-4 text-lg rounded-xl bg-input-bg text-text-main border-2 border-transparent focus:border-primary focus:ring-2 focus:ring-primary/50 mb-6 transition-all" />
+            
+            <button onclick="login()" class="w-full py-4 text-lg text-white bg-primary rounded-xl font-bold hover:opacity-90 active:scale-[0.98] shadow-lg shadow-primary/30 transition-all mb-4">
+                Login
             </button>
-
-            <div class="separator">OR</div>
-
-            <button class="auth-button email-auth" id="email-sign-in-btn">
-                <i class="fas fa-envelope"></i> Sign in with Email/Password
+            <button class="secondary-btn w-full py-3 text-lg text-primary bg-transparent border border-primary/50 rounded-xl font-bold hover:bg-primary/10 active:scale-[0.98] transition-all" onclick="signUp()">
+                Sign Up
             </button>
-            <p class="limited-hint">Email accounts require setup in the full app version.</p>
+            <p class="text-center text-error mt-4 font-medium" id="auth-error"></p>
         </div>
     </div>
 
-    <div id="app-container" class="hidden">
-        <aside id="sidebar">
-            <div class="sidebar-header">
-                <h2>Noteworthy</h2>
-                <button id="toggle-mode" title="Toggle Light/Dark Mode"><i class="fas fa-moon"></i></button>
-            </div>
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="search-input" placeholder="Search notes (e.g., 'locked', #tag)">
-            </div>
-            <div id="tag-chips-container">
+    <div id="main-app" class="view-contacts" style="display: none;">
+        
+        <div id="contact-panel" class="flex-col">
+            <div class="p-5 border-b border-border-color sticky top-0 bg-panel-bg z-50 shadow-sm">
+                <div id="profile-header" class="flex justify-between items-center mb-4">
+                    <h2 class="text-3xl font-bold text-text-main flex items-center">
+                        <i data-lucide="messages-square" class="w-7 h-7 mr-2 text-primary"></i> Chats
+                    </h2>
+                    <div class="flex space-x-2 items-center">
+                        <button id="theme-toggle" onclick="toggleTheme()" title="Toggle Light/Dark Theme"
+                                class="text-2xl p-3 rounded-full text-text-main hover:bg-hover-bg transition-all active:scale-95">
+                            </button>
+                        <button id="logout-button" onclick="logout()" 
+                                class="p-3 text-error rounded-full hover:bg-error/10 active:scale-95 transition-all" title="Logout">
+                            <i data-lucide="log-out" class="w-6 h-6"></i>
+                        </button>
+                    </div>
                 </div>
-            <button id="add-note-btn" class="sidebar-action-btn"><i class="fas fa-plus"></i> New Note</button>
-            <div id="notes-list">
-                </div>
-            <div class="sidebar-footer">
-                <button id="import-btn" title="Import Backup"><i class="fas fa-file-import"></i> Import</button>
-                <button id="export-backup-btn" title="Export Backup"><i class="fas fa-file-export"></i> Export</button>
-                <button id="sign-out-btn" title="Sign Out"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
-                <input type="file" id="file-input" accept=".json" style="display: none;">
-            </div>
-        </aside>
-
-        <main id="main-content">
-            <div id="editor-toolbar">
-                <div class="format-buttons">
-                    <button data-action="bold" title="Bold (Ctrl+B)"><i class="fas fa-bold"></i></button>
-                    <button data-action="italic" title="Italic (Ctrl+I)"><i class="fas fa-italic"></i></button>
-                    <button data-action="underline" title="Underline (Ctrl+U)"><i class="fas fa-underline"></i></button>
-                    <button data-action="formatBlock" data-value="H1" title="Heading 1"><i class="fas fa-heading"></i></button>
-                    <button data-action="insertUnorderedList" title="Bullet List"><i class="fas fa-list-ul"></i></button>
-                    <button id="focus-mode-btn" title="Focus Mode (Full Screen)"><i class="fas fa-arrows-alt-h"></i></button>
-                </div>
-                <div class="export-actions">
-                    <input type="text" id="tag-input" placeholder="Add tags (comma-separated)" title="Add tags to the note">
-                    <button id="lock-note-btn" title="Toggle Lock"><i class="fas fa-lock-open"></i></button>
-                    <select id="export-format-select" title="Select export format">
-                        <option value="txt">TXT</option>
-                        <option value="html">HTML</option>
-                        <option value="md">Markdown</option>
-                        <option value="doc">Word (.doc)</option>
-                    </select>
-                    <button id="export-note-btn" title="Export Note"><i class="fas fa-download"></i></button>
-                    <button id="delete-note-btn" title="Delete Note"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-
-            <div class="note-editor-container">
-                <input type="text" id="note-title" placeholder="Untitled Note" autocomplete="off" disabled>
-                <div id="editor-body" contenteditable="true" data-placeholder="Start typing or use '/' for quick actions..." disabled></div>
+                <p id="logged-in-as" class="text-text-muted text-sm mb-3"></p>
+                <input type="text" id="search-username" placeholder="Search contacts..." oninput="searchUsers()"
+                       class="w-full p-3 rounded-xl bg-input-bg text-text-main border-2 border-transparent focus:border-primary transition-all"/>
             </div>
             
-            <div id="quick-action-menu" class="hidden">
-                <div class="quick-action-item" data-action="insertUnorderedList"><i class="fas fa-list-ul"></i> Bullet List</div>
-                <div class="quick-action-item" data-action="insertOrderedList"><i class="fas fa-list-ol"></i> Numbered List</div>
-                <div class="quick-action-item" data-action="insertHTML" data-value='<label><input type="checkbox"> Checklist Item</label><br>'><i class="fas fa-check-square"></i> Checklist</div>
-                <div class="quick-action-item" data-action="formatBlock" data-value="H2"><i class="fas fa-heading"></i> Heading 2</div>
+            <div id="user-container" class="flex-grow overflow-y-auto">
+                </div>
+        </div>
+
+        <div id="chat-panel" class="empty-state flex flex-col h-full relative">
+            
+            <div id="empty-message" class="flex items-center justify-center flex-grow text-center p-10">
+                 <p class="text-xl text-text-muted italic flex flex-col items-center">
+                    <i data-lucide="arrow-left-circle" class="w-10 h-10 mb-4 text-primary opacity-50"></i>
+                    👋 Select a contact to start an expressive conversation!
+                 </p>
             </div>
 
-            <div id="focus-mode-overlay">
-                <button id="exit-focus-btn"><i class="fas fa-compress-alt"></i> Exit Focus Mode</button>
-                <div id="focus-content" contenteditable="true"></div>
+            <div id="chat-active-content" class="flex-col flex-grow h-full hidden">
+                
+                <div id="chat-header" class="p-4 border-b border-border-color flex items-center bg-panel-bg sticky top-0 z-50 shadow-md flex-shrink-0">
+                    <button class="chat-header-mobile-back text-2xl text-primary p-1 rounded-full hover:bg-hover-bg mr-2 active:scale-95" onclick="goBackToContacts()">
+                        <i data-lucide="chevron-left" class="w-6 h-6"></i>
+                    </button>
+                    <div class="flex items-center gap-3">
+                        <div id="chat-avatar" class="w-10 h-10 bg-primary/80 rounded-full flex items-center justify-center font-bold text-lg text-white">U</div>
+                        <h3 id="chat-username" class="text-xl font-semibold text-text-main"></h3>
+                    </div>
+                </div>
+                
+                <div id="chat-message-container" class="flex-grow min-h-0 p-4 overflow-y-auto flex flex-col gap-4">
+                    </div>
+
+                <div id="chat-input-area" class="p-3 border-t border-border-color flex items-end gap-2 bg-panel-bg flex-shrink-0">
+                    <textarea id="chat-message-input" rows="1" placeholder="Type a message..." oninput="autoResizeTextarea()" onkeypress="handleKeyPress(event)"
+                              class="flex-grow p-3 text-base rounded-3xl bg-input-bg text-text-main resize-none overflow-hidden max-h-[100px] border-none focus:ring-2 focus:ring-primary/50 transition-all"></textarea>
+                    
+                    <button onclick="sendChatMessage()" id="send-btn" class="w-12 h-12 p-3 text-xl font-bold text-white bg-primary rounded-full hover:opacity-90 active:scale-90 flex items-center justify-center transition-all flex-shrink-0" title="Send Message">
+                        <i data-lucide="send" class="w-6 h-6 -translate-x-[1px]"></i>
+                    </button>
+                </div>
             </div>
-        </main>
+            
+        </div>
+
+        <div class="react-menu bg-panel-bg border border-border-color rounded-2xl shadow-2xl z-[100] transition-all duration-200" 
+             id="react-menu" style="display: none; top: 0; left: 0;">
+            
+            <h4 class="text-text-muted text-xs font-medium mb-2 text-center">React:</h4>
+            <div class="emoji-buttons flex gap-2 justify-center mb-3">
+                <button onclick="reactToMessage('👍')" title="Like" class="p-3">👍</button>
+                <button onclick="reactToMessage('❤️')" title="Love" class="p-3">❤️</button>
+                <button onclick="reactToMessage('😂')" title="Laugh" class="p-3">😂</button>
+                <button onclick="reactToMessage('💡')" title="Idea" class="p-3">💡</button>
+                <button onclick="reactToMessage('🔥')" title="Fire" class="p-3">🔥</button>
+            </div>
+
+            <button id="delete-btn" onclick="deleteMessage()" 
+                    class="w-full py-3 px-3 text-base font-semibold text-white bg-error rounded-xl hover:bg-error/90 active:scale-[0.98] transition-all flex items-center justify-center">
+                <i data-lucide="trash-2" class="w-5 h-5 mr-2"></i> Delete Message
+            </button>
+        </div>
+
     </div>
 
-    <script type="module">
-        // ====================================================================
-        // --- FIREBASE IMPORTS (REQUIRED TO USE AUTH AND FIRESTORE) ---
-        // We use the full CDN URLs here for a single-file solution
-        // ====================================================================
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
-        import { 
-            getAuth, 
-            GoogleAuthProvider, 
-            signInWithPopup, 
-            onAuthStateChanged,
-            signOut
-        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { 
-            getFirestore, 
-            collection, 
-            doc, 
-            getDoc,
-            setDoc,
-            updateDoc,
-            deleteDoc,
-            query,
-            orderBy,
-            onSnapshot,
-            serverTimestamp 
-        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-        // Your web app's Firebase configuration
+    <script>
+        // Initialize Lucide Icons after DOM load
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+        
+        // --- FIREBASE CONFIG & INITIALIZATION (UNCHANGED) ---
+        // Global variables are automatically provided by the Canvas environment.
         const firebaseConfig = {
-            apiKey: "AIzaSyAj47-dmo2gfYkb4rh9lMJD5bQasTSKLlg",
-            authDomain: "noteworthy-e76c3.firebaseapp.com",
-            projectId: "noteworthy-e76c3",
-            storageBucket: "noteworthy-e76c3.firebasestorage.app",
-            messagingSenderId: "1022385392171",
-            appId: "1:1022385392171:web:65f42981d87eed1603786e",
-            measurementId: "G-3XNLP4S080"
+            apiKey: "AIzaSyDrTPRrIseMyXbmzXMNRniMoALQoq-IdZ0",
+            authDomain: "chaticular.firebaseapp.com",
+            projectId: "chaticular",
+            storageBucket: "chaticular.appspot.com",
+            messagingSenderId: "570690886660",
+            appId: "1:570690886660:web:6b837cea403c2466722951"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        // NOTE: storage is no longer needed since image upload was removed.
+        // const storage = firebase.storage(); 
+
+        let currentChatUser = '';
+        let currentMessageRef = null; 
+        let unsubscribeChatListener = null;
+
+        // --- THEME MANAGEMENT (UNCHANGED LOGIC, UPDATED SELECTORS) ---
+        const body = document.body;
+        const themeToggle = document.getElementById('theme-toggle');
+
+        function updateThemeIcon() {
+            // Use Lucide Icons
+            themeToggle.innerHTML = body.classList.contains('light-theme') 
+                ? '<i data-lucide="moon" class="w-6 h-6"></i>' 
+                : '<i data-lucide="sun" class="w-6 h-6"></i>';
+            lucide.createIcons();
+        }
+
+        function toggleTheme() {
+            const isLight = body.classList.toggle('light-theme');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            updateThemeIcon();
+        }
+
+        function loadThemePreference() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                body.classList.add('light-theme');
+            } else {
+                body.classList.remove('light-theme');
+            }
+            updateThemeIcon();
+        }
+
+        // --- UTILITIES (UNCHANGED) ---
+
+        const formatTimestamp = (timestamp) => {
+            if (!timestamp) return '...';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const day = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+            return `${time} ${day}`;
+        };
+        
+        function getAuthErrorElement() {
+            return document.getElementById('auth-error');
+        }
+
+        function getInitials(username) {
+            if (!username) return 'U';
+            const parts = username.split(/[\s.]+/).filter(Boolean);
+            if (parts.length > 1) {
+                return (parts[0][0] + parts[1][0]).toUpperCase();
+            }
+            return username[0].toUpperCase();
+        }
+
+        function autoResizeTextarea() {
+            const textarea = document.getElementById("chat-message-input");
+            textarea.style.height = 'auto'; // Reset height
+            // Set to scrollHeight but cap at 100px (max-h-[100px] in Tailwind)
+            const newHeight = Math.min(textarea.scrollHeight, 100); 
+            textarea.style.height = newHeight + 'px';
+        }
+
+        // --- VIEW MANAGEMENT (MODIFIED TO USE NEW STRUCTURE) ---
+        const mainApp = document.getElementById('main-app');
+        const chatPanel = document.getElementById('chat-panel');
+        const chatMessageContainer = document.getElementById("chat-message-container");
+        
+        const isMobileView = () => window.matchMedia("(max-width: 767px)").matches;
+
+        function showView(viewName) {
+            const isChat = viewName === 'chat';
+
+            // 1. Mobile Transition Logic
+            if (isMobileView()) {
+                mainApp.classList.remove('view-chat', 'view-contacts');
+                mainApp.classList.add(isChat ? 'view-chat' : 'view-contacts');
+            } else {
+                // Desktop: Always show both panels
+                mainApp.classList.remove('view-chat', 'view-contacts');
+                mainApp.classList.add('view-contacts');
+            }
+
+            // 2. Content Visibility Logic (Toggling the empty state class)
+            chatPanel.classList.toggle('empty-state', !isChat);
+            document.getElementById('chat-active-content').classList.toggle('hidden', !isChat); // New content wrapper
+            document.getElementById('empty-message').classList.toggle('hidden', isChat);
+
+            if (isChat) {
+                // Scroll to bottom when showing chat view
+                setTimeout(() => chatMessageContainer.scrollTo({ top: chatMessageContainer.scrollHeight, behavior: 'instant' }), 100);
+            }
+        }
+
+        function goBackToContacts() {
+            showView('contacts');
+            currentChatUser = '';
+            if (unsubscribeChatListener) { 
+                unsubscribeChatListener(); 
+                unsubscribeChatListener = null; 
+            }
+            // Remove active state from all contact items
+            document.querySelectorAll('.user-item').forEach(item => item.classList.remove('bg-primary/20', 'active'));
+            document.getElementById('chat-username').textContent = '';
+            document.getElementById('chat-avatar').textContent = 'U';
+            document.getElementById('react-menu').style.display = 'none'; // Hide menu on back
+        }
+
+        // --- AUTH & INITIALIZATION (UNCHANGED LOGIC) ---
+
+        window.onload = () => {
+            loadThemePreference();
+            const username = localStorage.getItem('username');
+            if (username) {
+                document.getElementById("login-container").style.display = "none";
+                document.getElementById("main-app").style.display = "flex";
+                loginSuccess(username);
+            } else {
+                document.getElementById("login-container").style.display = "flex";
+                document.getElementById("main-app").style.display = "none";
+            }
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app); // For analytics tracking
-        
-        // Initialize Auth and Firestore services
-        const auth = getAuth(app); 
-        const db = getFirestore(app); 
+        function loginSuccess(username) {
+            document.getElementById("login-container").style.display = "none";
+            document.getElementById("main-app").style.display = "flex";
+            document.getElementById("logged-in-as").textContent = `Logged in as: ${username}`;
+            loadAllUsers();
+            showView('contacts');
+        }
 
-        // ====================================================================
-        // --- APP STATE VARIABLES ---
-        // ====================================================================
-        const LOCAL_STORAGE_KEY = 'noteworthy_data';
-        let notes = [];
-        let activeNoteId = null;
-        let currentUser = null; // Holds the Firebase User object
+        function logout() {
+            localStorage.removeItem('username');
+            goBackToContacts();
+            document.getElementById("username").value = "";
+            document.getElementById("password").value = "";
+            document.getElementById('auth-error').textContent = "";
+            document.getElementById("login-container").style.display = "flex";
+            document.getElementById("main-app").style.display = "none";
+        }
 
-        // DOM Elements
-        const body = document.body;
-        const authScreen = document.getElementById('auth-screen');
-        const appContainer = document.getElementById('app-container');
-        const notesList = document.getElementById('notes-list');
-        const noteTitleInput = document.getElementById('note-title');
-        const editorBody = document.getElementById('editor-body');
-        const searchInput = document.getElementById('search-input');
-        const toggleModeBtn = document.getElementById('toggle-mode');
-        const tagInput = document.getElementById('tag-input');
-        const tagChipsContainer = document.getElementById('tag-chips-container');
-        const lockNoteBtn = document.getElementById('lock-note-btn');
-        const focusOverlay = document.getElementById('focus-mode-overlay');
-        const focusContent = document.getElementById('focus-content');
-        const quickActionMenu = document.getElementById('quick-action-menu');
+        function signUp() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const errorElement = getAuthErrorElement();
+            errorElement.textContent = "";
 
-        // ====================================================================
-        // --- AUTHENTICATION FLOW ---
-        // ====================================================================
-
-        document.getElementById('google-sign-in-btn').addEventListener('click', () => {
-            const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider)
-                .catch((error) => {
-                    alert("Google sign-in failed: " + error.message);
-                });
-        });
-
-        document.getElementById('email-sign-in-btn').addEventListener('click', () => {
-            // NOTE: In a production app, this would open a modal/form for email/password input.
-            alert("Email/Password sign-in requires a separate form and function (e.g., createUserWithEmailAndPassword). Using Google for demo.");
-        });
-        
-        document.getElementById('sign-out-btn').addEventListener('click', () => {
-            signOut(auth).catch(error => console.error("Sign out error:", error));
-        });
-
-        // 🛡️ The core of the app: listens for login/logout changes
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                authScreen.classList.add('hidden');
-                appContainer.classList.remove('hidden');
-                initApp();
-            } else {
-                currentUser = null;
-                authScreen.classList.remove('hidden');
-                appContainer.classList.add('hidden');
-                // Clean up UI/data when logged out
-                notes = [];
-                activeNoteId = null;
-                notesList.innerHTML = '';
+            if (username.length < 4 || password.length < 6) {
+                errorElement.textContent = "Username must be 4+ chars, Password must be 6+ chars!";
+                return;
             }
-        });
 
-        // ====================================================================
-        // --- DATA MIGRATION ---
-        // ====================================================================
-
-        async function migrateLocalNotes(uid) {
-            const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (!localData) return;
-
-            const localNotes = JSON.parse(localData);
-            if (localNotes.length === 0) return;
-
-            if (confirm(`Found ${localNotes.length} notes in your browser. Do you want to migrate them to your cloud account?`)) {
-                const notesCollectionRef = collection(db, `users/${uid}/notes`);
-                
-                for (const note of localNotes) {
-                    // Use Firestore's auto-ID for new documents, but keep the data
-                    await setDoc(doc(notesCollectionRef), {
-                        title: note.title,
-                        body: note.body,
-                        tags: note.tags || [],
-                        isLocked: note.isLocked || false,
-                        modifiedAt: new Date(note.modifiedAt || note.createdAt),
-                        createdAt: new Date(note.createdAt)
+            db.collection("users").doc(username).get().then((doc) => {
+                if (doc.exists) {
+                    errorElement.textContent = "Username already taken! Try logging in.";
+                } else {
+                    db.collection("users").doc(username).set({
+                        username: username,
+                        password: password,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    })
+                    .then(() => {
+                        localStorage.setItem('username', username);
+                        loginSuccess(username);
+                    })
+                    .catch(error => {
+                        errorElement.textContent = `Error signing up: ${error.message}`;
                     });
                 }
-                // Important: Clear local storage after successful migration
-                localStorage.removeItem(LOCAL_STORAGE_KEY);
-                alert("Migration complete! Local notes deleted. Your notes are now in the cloud. ✨");
-            }
-        }
-        
-        // ====================================================================
-        // --- FIRESTORE DATA SYNC & CRUD ---
-        // ====================================================================
-
-        // Get or Create User Preferences
-        async function loadUserPreferences(uid) {
-            const userDocRef = doc(db, 'users', uid);
-            const userDoc = await getDoc(userDocRef);
-            let prefs;
-
-            if (userDoc.exists()) {
-                prefs = userDoc.data();
-            } else {
-                // Create default preferences
-                prefs = { theme: 'light-mode', lastActiveNoteId: null };
-                await setDoc(userDocRef, prefs);
-            }
-            
-            // Apply theme preference
-            body.className = prefs.theme;
-            
-            // Migrate local data on first sign-in
-            if (!userDoc.exists()) {
-                await migrateLocalNotes(uid);
-            }
-
-            return prefs;
+            });
         }
 
-        function syncNotesListener(uid, lastActiveId = null) {
-            const notesCollectionRef = collection(db, `users/${uid}/notes`);
-            // Query for notes, ordered by modifiedAt descending
-            const q = query(notesCollectionRef, orderBy('modifiedAt', 'desc'));
+        function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const errorElement = getAuthErrorElement();
+            errorElement.textContent = "";
 
-            // Real-time listener
-            onSnapshot(q, (snapshot) => {
-                notes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (!username || !password) {
+                errorElement.textContent = "Please enter both username and password!";
+                return;
+            }
 
-                renderNotesList();
-                renderTagChips();
-                
-                if (notes.length > 0) {
-                    let noteToLoad = notes[0].id;
-                    if (activeNoteId) {
-                        noteToLoad = activeNoteId; // Keep current note active
-                    } else if (lastActiveId && notes.some(n => n.id === lastActiveId)) {
-                        noteToLoad = lastActiveId; // Load last active from prefs
-                    }
-                    loadNote(noteToLoad);
+            db.collection("users").doc(username).get().then((doc) => {
+                if (doc.exists && doc.data().password === password) {
+                    localStorage.setItem('username', username);
+                    loginSuccess(username);
                 } else {
-                    addNote(); // Create a placeholder note if none exist
+                    errorElement.textContent = "Invalid username or password!";
                 }
-            }, (error) => {
-                console.error("Firestore listener failed:", error);
-                alert("Could not load notes in real-time. Check connection/security rules.");
+            }).catch((error) => {
+                errorElement.textContent = `Error logging in: ${error.message}`;
+            });
+        }
+
+        // --- USER LIST & SEARCH (MODIFIED RENDER/STYLE) ---
+
+        function loadAllUsers() {
+            const currentUser = localStorage.getItem('username');
+            db.collection("users").orderBy("username").onSnapshot((querySnapshot) => {
+                const userContainer = document.getElementById("user-container");
+                userContainer.innerHTML = "";
+                querySnapshot.forEach((doc) => {
+                    const userData = doc.data();
+                    if (userData.username !== currentUser) {
+                        renderUserItem(userData.username, userContainer);
+                    }
+                });
+            }, error => console.error("Error listening to users: ", error));
+        }
+
+        function searchUsers() {
+            const searchTerm = document.getElementById("search-username").value.toLowerCase();
+            const allUsers = document.querySelectorAll('.user-item');
+            
+            allUsers.forEach(item => {
+                const usernameText = item.querySelector('.username-text').textContent.toLowerCase();
+                item.style.display = usernameText.includes(searchTerm) ? 'flex' : 'none';
             });
         }
         
-        // C - Create Note
-        async function addNote() {
-            if (!currentUser) return;
-            const notesCollectionRef = collection(db, `users/${currentUser.uid}/notes`);
+        function renderUserItem(username, container) {
+            const userDiv = document.createElement("div");
+            userDiv.classList.add("user-item", "p-4", "cursor-pointer", "border-b", "border-border-color", "flex", "items-center", "gap-4", "hover:bg-hover-bg", "transition-all", "duration-200");
             
-            const newNote = {
-                title: 'Untitled Note',
-                body: '',
-                tags: [],
-                isLocked: false,
-                createdAt: serverTimestamp(),
-                modifiedAt: serverTimestamp()
+            if (username === currentChatUser) {
+                userDiv.classList.add("bg-primary/20", "active"); 
+            }
+            
+            userDiv.innerHTML = `
+                <div class="user-item-avatar w-12 h-12 bg-primary/80 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-md">${getInitials(username)}</div>
+                <span class="username-text text-text-main text-lg font-medium">${username}</span>
+            `;
+            
+            userDiv.onclick = () => {
+                startChat(username);
             };
-
-            try {
-                const docRef = await setDoc(doc(notesCollectionRef), newNote);
-                activeNoteId = docRef.id;
-            } catch (e) {
-                console.error("Error adding document: ", e);
-            }
+            container.appendChild(userDiv);
         }
 
-        // U - Update Note
-        async function updateNoteInCloud() {
-            if (!activeNoteId || !currentUser) return;
-            
-            const noteDocRef = doc(db, `users/${currentUser.uid}/notes`, activeNoteId);
-            
-            const updateData = {
-                title: noteTitleInput.value.trim() || 'Untitled Note',
-                body: editorBody.innerHTML,
-                tags: tagInput.value.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag),
-                modifiedAt: serverTimestamp()
-            };
+        // --- CHAT CORE FUNCTIONS (MODIFIED sendChatMessage FOR NO IMAGE UPLOAD) ---
 
-            try {
-                await updateDoc(noteDocRef, updateData);
-            } catch (e) {
-                console.error("Error updating document: ", e);
+        function startChat(username) {
+            if (unsubscribeChatListener) {
+                unsubscribeChatListener();
             }
-        }
-        
-        // D - Delete Note
-        async function deleteNote() {
-            if (!activeNoteId || !currentUser || !confirm("Are you sure you want to delete this cloud note?")) return;
 
-            try {
-                await deleteDoc(doc(db, `users/${currentUser.uid}/notes`, activeNoteId));
-                activeNoteId = null;
-            } catch (e) {
-                console.error("Error deleting document: ", e);
-            }
-        }
-        
-        // Toggle Lock State
-        async function toggleLock() {
-            if (!activeNoteId || !currentUser) return;
-            const note = notes.find(n => n.id === activeNoteId);
-            if (!note) return;
-
-            const noteDocRef = doc(db, `users/${currentUser.uid}/notes`, activeNoteId);
-            const newLockState = !note.isLocked;
-
-            try {
-                await updateDoc(noteDocRef, { isLocked: newLockState });
-                loadNote(activeNoteId); // Force re-render lock icon and disable fields
-            } catch (e) {
-                console.error("Error toggling lock: ", e);
-            }
-        }
-
-        // R - Load Note (UI function, data comes from snapshot)
-        function loadNote(id) {
-            const note = notes.find(n => n.id === id);
-            if (!note) return;
-
-            activeNoteId = id;
-            noteTitleInput.value = note.title;
-            editorBody.innerHTML = note.body;
-            tagInput.value = note.tags.join(', ');
-
-            // Apply lock state
-            const isLocked = note.isLocked;
-            noteTitleInput.disabled = isLocked;
-            editorBody.disabled = isLocked;
-            lockNoteBtn.innerHTML = isLocked 
-                ? '<i class="fas fa-lock"></i>' 
-                : '<i class="fas fa-lock-open"></i>';
-            lockNoteBtn.title = isLocked ? 'Unlock Note' : 'Lock Note';
-
-            // Highlight active note
-            document.querySelectorAll('.note-item').forEach(el => el.classList.remove('active'));
-            const activeEl = document.getElementById(`note-${id}`);
-            if(activeEl) activeEl.classList.add('active');
-            
-            // If in focus mode, update focus content too
-            if(focusOverlay.style.display !== 'none') {
-                focusContent.innerHTML = note.body;
-            }
-        }
-
-        // ====================================================================
-        // --- RENDERING & UI (Modified to use the 'notes' array) ---
-        // ====================================================================
-
-        function renderNotesList() {
-            notesList.innerHTML = '';
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            const showLockedOnly = searchTerm.includes('locked');
-
-            const filteredNotes = notes.filter(note => {
-                if (note.isLocked && !showLockedOnly) return false;
-                
-                const titleBodyMatch = note.title.toLowerCase().includes(searchTerm) || note.body.toLowerCase().includes(searchTerm);
-                const tagMatch = note.tags.some(tag => tag.toLowerCase().includes(searchTerm.replace('#', '')));
-                
-                if (showLockedOnly) {
-                    return note.isLocked;
-                } else {
-                    return titleBodyMatch || tagMatch;
+            // Update active state visuals
+            document.querySelectorAll('.user-item').forEach(item => {
+                item.classList.remove('bg-primary/20', 'active');
+                if (item.querySelector('.username-text').textContent.trim() === username) {
+                    item.classList.add('bg-primary/20', 'active');
                 }
             });
 
-            filteredNotes.forEach(note => {
-                const div = document.createElement('div');
-                div.className = 'note-item';
-                div.id = `note-${note.id}`;
-                if (note.id === activeNoteId) div.classList.add('active');
-                
-                // Convert Firestore Timestamp to Date for display
-                const modifiedDate = note.modifiedAt && note.modifiedAt.toDate ? note.modifiedAt.toDate() : new Date(note.modifiedAt);
-
-                div.innerHTML = `
-                    <h4>${note.title} ${note.isLocked ? '<i class="fas fa-lock" style="font-size: 0.9em; margin-left: 5px;"></i>' : ''}</h4>
-                    <small>${modifiedDate.toLocaleDateString()}</small>
-                `;
-                div.onclick = () => loadNote(note.id);
-                notesList.appendChild(div);
-            });
-        }
-        
-        function renderTagChips() {
-            // ... (keep tag chip logic as before)
-            tagChipsContainer.innerHTML = '';
-            const allTags = new Set();
-            notes.forEach(note => note.tags.forEach(tag => allTags.add(tag)));
-
-            Array.from(allTags).sort().slice(0, 15).forEach(tag => { 
-                const chip = document.createElement('span');
-                chip.className = 'tag-chip';
-                chip.textContent = `#${tag}`;
-                chip.onclick = () => { 
-                    searchInput.value = tag; 
-                    renderNotesList();
-                    searchInput.focus();
-                };
-                tagChipsContainer.appendChild(chip);
-            });
+            currentChatUser = username;
+            document.getElementById("chat-username").textContent = username;
+            document.getElementById("chat-avatar").textContent = getInitials(username);
+            showView('chat');
+            loadChatMessages();
         }
 
-        // --- UI ACTIONS (Mode, Focus, etc. - mostly unchanged) ---
-        
-        function toggleMode() {
-            body.classList.toggle('dark-mode');
-            body.classList.toggle('light-mode');
-            // TODO: Update preference in Firestore here
-        }
+        function loadChatMessages() {
+            const username = localStorage.getItem('username');
 
-        function executeFormatAction(command, value = null) {
-            document.execCommand(command, false, value);
-            editorBody.focus();
-            updateNoteInCloud(); // Save immediately after formatting
-        }
+            unsubscribeChatListener = db.collection("direct_messages").doc(username).collection(currentChatUser)
+                .orderBy("timestamp", "asc")
+                .onSnapshot((querySnapshot) => {
+                    // Check if scrolled near bottom before update
+                    const wasScrolledToBottom = chatMessageContainer.scrollHeight - chatMessageContainer.scrollTop <= chatMessageContainer.clientHeight + 100;
+                    
+                    // Store current content before clearing
+                    const oldContent = Array.from(chatMessageContainer.children).map(el => el.getAttribute('data-id'));
+                    
+                    chatMessageContainer.innerHTML = ""; 
+                    
+                    querySnapshot.forEach((doc) => {
+                        const messageData = doc.data();
+                        
+                        const messageDiv = document.createElement("div");
+                        messageDiv.classList.add("message", "max-w-[80%]", "py-3", "px-4", "relative", "cursor-pointer", "shadow-lg", "select-none");
+                        messageDiv.classList.add(messageData.sender === username ? "sender" : "receiver", "text-base", "self-start", "transition-all");
 
-        function toggleFocusMode() {
-            // ... (keep focus mode logic as before)
-            const isFocusing = focusOverlay.style.display === 'flex';
-            if (!activeNoteId) return;
+                        // Apply new message animation class if it's a new message
+                        if (!oldContent.includes(doc.id)) {
+                            messageDiv.classList.add('new-message'); 
+                        }
 
-            if (!isFocusing) {
-                focusContent.innerHTML = editorBody.innerHTML;
-                focusContent.setAttribute('contenteditable', 'true');
-                focusOverlay.style.display = 'flex';
-                focusContent.focus();
-            } else {
-                editorBody.innerHTML = focusContent.innerHTML;
-                updateNoteInCloud();
-                focusOverlay.style.display = 'none';
-                editorBody.focus();
-            }
-        }
-        
-        // ... (Keep Quick Action Menu, Import/Export/Download functions as before) ...
-        
-        // --- Quick Action Menu Logic ---
-        function showQuickActionMenu(x, y) {
-            const editorContainer = document.querySelector('.note-editor-container');
-            const editorRect = editorContainer.getBoundingClientRect();
-            
-            quickActionMenu.style.left = `${x - editorRect.left}px`;
-            quickActionMenu.style.top = `${y - editorRect.top + editorBody.scrollTop}px`;
-            quickActionMenu.classList.remove('hidden');
-        }
+                        // Apply sender/receiver specific colors and alignment
+                        if (messageData.sender === username) {
+                            messageDiv.classList.add("bg-bubble-self", "text-white", "ml-auto");
+                        } else {
+                            messageDiv.classList.add("bg-bubble-other", "text-text-main", "mr-auto");
+                        }
 
-        editorBody.addEventListener('keydown', (e) => {
-            if (e.key === '/') {
-                setTimeout(() => {
-                    const selection = window.getSelection();
-                    if (selection.rangeCount > 0) {
-                        const range = selection.getRangeAt(0);
-                        const rect = range.getBoundingClientRect();
-                        showQuickActionMenu(rect.left, rect.bottom + 10);
+                        messageDiv.setAttribute('data-id', doc.id);
+                        messageDiv.onclick = (event) => showReactionMenu(event, doc.id, messageData.sender);
+
+                        let contentHTML = messageData.content ? `<span class="message-content">${messageData.content}</span>` : '';
+                        
+                        // Image Display Logic (kept in case old messages had images, but upload is removed)
+                        if (messageData.imageUrl) {
+                            const placeholder = 'https://placehold.co/200x150/2C2C30/A1A1AA?text=Image+Load+Fail';
+                            contentHTML += `<img src="${messageData.imageUrl}" onerror="this.onerror=null;this.src='${placeholder}';" alt="Attached Image" class="max-w-full rounded-xl mt-1 block object-cover max-h-[250px] transition-all duration-300 hover:scale-[1.01] cursor-pointer"/>`;
+                        }
+                        
+                        let reactionHTML = '';
+                        if (messageData.reactions && Object.keys(messageData.reactions).length > 0) {
+                            // Simplified reaction mapping to only show emoji, count, and color (no Lucide icons in the pills)
+                            const reactionColors = {
+                                '👍': 'text-blue-500',
+                                '❤️': 'text-red-500',
+                                '😂': 'text-yellow-500',
+                                '💡': 'text-yellow-300',
+                                '🔥': 'text-orange-500'
+                            };
+                            
+                            const uniqueReactionsMap = {};
+                            Object.values(messageData.reactions).forEach(emoji => {
+                                uniqueReactionsMap[emoji] = (uniqueReactionsMap[emoji] || 0) + 1;
+                            });
+
+                            const reactionPills = Object.entries(uniqueReactionsMap).map(([emoji, count]) => {
+                                const colorClass = reactionColors[emoji] || 'text-text-main';
+                                
+                                return `<span class="flex items-center text-xs font-semibold mr-1 transition-all hover:scale-105 ${colorClass}">
+                                            ${emoji} ${count > 1 ? count : ''}
+                                        </span>`;
+                            }).join('');
+
+
+                            reactionHTML = `<div class="reactions absolute -bottom-3 right-0 bg-panel-bg border border-border-color py-1 px-2 rounded-full text-xs shadow-xl flex items-center transform translate-x-1/4 select-none">
+                                ${reactionPills}
+                            </div>`;
+                        }
+
+                        messageDiv.innerHTML = `
+                            ${contentHTML}
+                            <span class="message-timestamp block mt-1 text-xs opacity-70 ${messageData.sender === username ? 'text-right' : 'text-left'}">
+                                ${formatTimestamp(messageData.timestamp)}
+                            </span>
+                            ${reactionHTML}
+                        `;
+                        
+                        chatMessageContainer.appendChild(messageDiv);
+                        // Re-create icons for the new messages
+                        // NOTE: Only need to run if using Lucide in pills. Since we removed it, this is less critical but kept for other uses (send button).
+                        lucide.createIcons(messageDiv); 
+                    });
+                    
+                    // Smooth scroll on new message or if already at bottom
+                    if (wasScrolledToBottom || querySnapshot.docChanges().some(change => change.type === 'added')) {
+                        setTimeout(() => chatMessageContainer.scrollTo({ top: chatMessageContainer.scrollHeight, behavior: 'smooth' }), 50);
                     }
-                }, 10);
-            } else if (e.key === 'Escape' || !quickActionMenu.classList.contains('hidden')) {
-                quickActionMenu.classList.add('hidden');
-            }
-        });
-        
-        // Export functions (not cloud-dependent, mostly for user backup)
-        function downloadFile(content, fileName, mimeType) { /* ... (as before) */ }
-        function exportNote() { /* ... (as before) */ }
-        function exportBackup() { /* ... (as before) */ }
-        function importBackup() { /* ... (as before) */ }
-        
-        // --- INITIALIZATION & BINDINGS ---
-
-        async function initApp() {
-            // 1. Load User Preferences and run migration check
-            const prefs = await loadUserPreferences(currentUser.uid);
-            
-            // 2. Start Real-time Data Listener
-            syncNotesListener(currentUser.uid, prefs.lastActiveNoteId);
-
-            // Event Listeners for CRUD/Persistence
-            noteTitleInput.addEventListener('input', updateNoteInCloud);
-            editorBody.addEventListener('input', updateNoteInCloud);
-            tagInput.addEventListener('input', updateNoteInCloud);
-            
-            // Re-bind only if not already bound (safety measure)
-            if (!document.getElementById('add-note-btn').hasAttribute('data-bound')) {
-                searchInput.addEventListener('input', renderNotesList);
-                document.getElementById('add-note-btn').addEventListener('click', addNote);
-                document.getElementById('delete-note-btn').addEventListener('click', deleteNote);
-                document.getElementById('lock-note-btn').addEventListener('click', toggleLock);
-                
-                // Add bound attribute to prevent double-binding on re-login
-                document.getElementById('add-note-btn').setAttribute('data-bound', true);
-            }
-
-            // Other UI Bindings...
-            // ... (Toolbar, Focus Mode, Import/Export bindings as before) ...
+                }, error => {
+                    console.error("Error listening to chat messages: ", error);
+                });
         }
 
+        async function sendChatMessage() {
+            const messageInput = document.getElementById("chat-message-input");
+            const message = messageInput.value.trim();
+            const username = localStorage.getItem('username');
+
+            // Simplified check: only need content
+            if (!message) {
+                // Animated error feedback
+                messageInput.classList.add('border-2', 'border-error', 'animate-pulse');
+                setTimeout(() => messageInput.classList.remove('border-2', 'border-error', 'animate-pulse'), 1000);
+                return;
+            }
+            
+            // Disable button and show loading state
+            const sendButton = document.getElementById('send-btn');
+            sendButton.innerHTML = '<i data-lucide="loader-circle" class="w-6 h-6 animate-spin"></i>'; // Larger icon for larger button
+            lucide.createIcons(sendButton);
+
+            const messageData = {
+                content: message,
+                sender: username,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                imageUrl: null, // Always null now
+                reactions: {}
+            };
+            
+            // --- CORE FIRESTORE LOGIC ---
+            const batch = db.batch();
+            const newDocRef = db.collection("direct_messages").doc(username).collection(currentChatUser).doc();
+            const receiverDocRef = db.collection("direct_messages").doc(currentChatUser).collection(username).doc(newDocRef.id);
+
+            batch.set(newDocRef, messageData);
+            batch.set(receiverDocRef, messageData);
+
+            batch.commit().then(() => {
+                messageInput.value = "";
+                autoResizeTextarea(); 
+                
+                // Restore button state
+                sendButton.innerHTML = '<i data-lucide="send" class="w-6 h-6 -translate-x-[1px]"></i>';
+                lucide.createIcons(sendButton);
+            }).catch(error => {
+                console.error("Error sending message in batch: ", error);
+                // Restore button state
+                sendButton.innerHTML = '<i data-lucide="send" class="w-6 h-6 -translate-x-[1px]"></i>';
+                lucide.createIcons(sendButton);
+            });
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendChatMessage();
+            }
+        }
+
+        // --- MESSAGE CONTEXT (REACTIONS/DELETE) (REWRITTEN POSITIONING) ---
+
+        function showReactionMenu(event, messageId, messageSender) {
+            event.stopPropagation();
+            const menu = document.getElementById('react-menu');
+            const deleteButton = document.getElementById('delete-btn');
+            const currentUser = localStorage.getItem('username');
+            const messageElement = event.currentTarget;
+            const rect = messageElement.getBoundingClientRect();
+
+            currentMessageRef = { id: messageId, sender: messageSender };
+
+            // Show/Hide delete button based on ownership
+            deleteButton.style.display = (messageSender === currentUser) ? 'flex' : 'none';
+
+            // Reset menu position styles for recalculation
+            menu.style.display = 'flex';
+            menu.style.transform = 'none';
+
+            // 1. Calculate ideal position (centered above message)
+            let menuX = rect.left + (rect.width / 2); // Center of the message bubble
+            let menuY = rect.top; // Top edge of the message bubble
+
+            const menuWidth = menu.offsetWidth;
+            const menuHeight = menu.offsetHeight;
+            const padding = 10; // Padding from screen edges
+
+            // 2. Adjust X (Horizontal)
+            let finalX = menuX - (menuWidth / 2);
+
+            // Left boundary check
+            if (finalX < padding) {
+                finalX = padding;
+            }
+            // Right boundary check
+            else if (finalX + menuWidth > window.innerWidth - padding) {
+                finalX = window.innerWidth - menuWidth - padding;
+            }
+
+            // 3. Adjust Y (Vertical) - Try above first
+            let finalY = menuY - menuHeight - padding;
+
+            // Top boundary check: if it goes off screen top, move it below
+            if (finalY < padding) {
+                finalY = rect.bottom + padding;
+            }
+
+            // 4. Apply final position
+            menu.style.left = `${finalX}px`;
+            menu.style.top = `${finalY}px`;
+            
+            // 5. Setup auto-hide on outside click
+            const hideMenu = (e) => {
+                if (!menu.contains(e.target) && e.target !== event.currentTarget) {
+                    menu.style.display = 'none';
+                    document.removeEventListener('click', hideMenu);
+                }
+            };
+            // Use setTimeout to allow the current click event to complete before setting up the listener
+            setTimeout(() => document.addEventListener('click', hideMenu), 0);
+        }
+
+        async function reactToMessage(emoji) {
+            const menu = document.getElementById('react-menu');
+            menu.style.display = 'none';
+
+            if (!currentMessageRef || !currentChatUser) return;
+            const { id: messageId } = currentMessageRef;
+            const username = localStorage.getItem('username');
+
+            // --- CORE FIRESTORE LOGIC (UNCHANGED) ---
+            const docRefSender = db.collection("direct_messages").doc(username).collection(currentChatUser).doc(messageId);
+            const docRefReceiver = db.collection("direct_messages").doc(currentChatUser).collection(username).doc(messageId);
+
+            const reactionField = `reactions.${username}`;
+            
+            const batch = db.batch();
+            batch.update(docRefSender, { [reactionField]: emoji });
+            batch.update(docRefReceiver, { [reactionField]: emoji });
+            
+            try {
+                await batch.commit();
+            } catch (error) {
+                console.error("Error reacting to message: ", error);
+            }
+        }
+
+        async function deleteMessage() {
+            const menu = document.getElementById('react-menu');
+            menu.style.display = 'none';
+            
+            if (!currentMessageRef || !currentChatUser) return;
+            const { id: messageId, sender: messageSender } = currentMessageRef;
+            const currentUser = localStorage.getItem('username');
+
+            if (messageSender !== currentUser) {
+                return;
+            }
+
+            // --- CORE FIRESTORE LOGIC (UNCHANGED) ---
+            const docRefSender = db.collection("direct_messages").doc(currentUser).collection(currentChatUser).doc(messageId);
+            const docRefReceiver = db.collection("direct_messages").doc(currentChatUser).collection(currentUser).doc(messageId);
+
+            const batch = db.batch();
+            batch.delete(docRefSender);
+            batch.delete(docRefReceiver);
+
+            try {
+                await batch.commit();
+            } catch (error) {
+                console.error("Error deleting message: ", error);
+            }
+        }
     </script>
 </body>
 </html>
