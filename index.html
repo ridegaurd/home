@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chaticular - Expressive Messenger</title>
+    <title>Chaticular - Mobile Messenger</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -40,16 +40,15 @@
     <style>
         /* --- Core Theme Variables (DARK THEME DEFAULT) --- */
         :root {
-            /* Vibrant, expressive colors */
-            --color-primary: #8B5CF6; /* Violet */
-            --color-surface: #0A0A0A; /* Deep Background (Outside App) */
-            --color-background: #18181B; /* Panel Background (Slightly Lighter) */
-            --color-on-surface: #F0F0F0; /* Main Text */
-            --color-on-surface-variant: #A1A1AA; /* Muted Text */
-            --color-error: #EF4444; /* Red */
+            --color-primary: #8B5CF6; 
+            --color-surface: #0A0A0A; 
+            --color-background: #18181B; 
+            --color-on-surface: #F0F0F0; 
+            --color-on-surface-variant: #A1A1AA; 
+            --color-error: #EF4444; 
             --color-bubble-self: var(--color-primary);
             --color-on-bubble-self: #FFFFFF;
-            --color-bubble-other: #27272A; /* Other person's message bubble */
+            --color-bubble-other: #27272A; 
             --color-on-bubble-other: var(--color-on-surface);
             --color-input-bg: #2C2C30;
             --color-border: #3F3F46;
@@ -68,25 +67,28 @@
             --color-input-bg: #F9F9FB;
             --color-border: #E5E5E5;
             --color-hover-bg: #F3F4F6;
-            --color-primary: #5A67D8; /* Slightly darker primary for visibility */
+            --color-primary: #5A67D8; 
         }
 
         /* --- Global Setup & Transitions --- */
         body {
             transition: background-color var(--transition-speed);
             background-color: var(--color-surface);
+            /* Remove desktop padding */
+            padding: 0;
         }
         * {
             transition: color var(--transition-speed), background-color var(--transition-speed);
         }
 
-        /* --- Application Layout (Mobile-First Sliding Panels) --- */
-        /* Use 100vh for height on mobile to cover the whole screen */
+        /* --- Mobile Layout (Sliding Panels) --- */
         #main-app {
+            /* Full screen height and width for mobile */
             @apply w-full h-screen max-w-full bg-surface-deep flex relative overflow-hidden;
         }
         
         #contact-panel, #chat-panel {
+            /* Absolute positioning for panel sliding */
             position: absolute;
             top: 0;
             bottom: 0;
@@ -99,7 +101,7 @@
             transform: translateX(100%); /* Start chat off-screen */
         }
         
-        /* Mobile: View Chat State */
+        /* Mobile: View Chat State - Slides the contacts out and chat in */
         #main-app.view-chat #contact-panel {
             transform: translateX(-100%);
         }
@@ -108,75 +110,24 @@
             z-index: 20; 
         }
 
-        /* FIX: Ensure Chat Panel content fills space correctly. */
+        /* Message Containers */
         #chat-active-content {
             @apply flex-col flex-grow h-full;
         }
-
-        /* FIX: Make the chat message container dynamic height, fixed bottom input */
-        /* Flex grow container inside a flex container (chat-active-content) */
         #chat-message-container {
             @apply flex-grow overflow-y-auto;
-            /* Calculate height: 100% of parent minus fixed header/input area heights */
-            /* Using min-h-0 is a flexbox trick to allow scrolling when content overflows */
             min-height: 0; 
         }
-
-        /* FIX: Fixed Input Area on Mobile */
-        /* On mobile, use absolute positioning to try and fix it below the keyboard effect */
-        @media (max-width: 767px) {
-            #chat-input-area {
-                position: absolute; /* Changed from default flow for mobile fix */
-                bottom: 0;
-                width: 100%;
-            }
-        }
-
-        /* --- Desktop View (768px+) --- */
-        @media (min-width: 768px) {
-            body { @apply p-6; }
-            #main-app {
-                /* Larger fixed size for desktop apps */
-                @apply w-[95vw] h-[90vh] max-w-[1400px] rounded-3xl shadow-2xl mx-auto;
-                position: static;
-            }
-            
-            /* Override Mobile Transitions for Flex layout */
-            #contact-panel, #chat-panel {
-                position: static;
-                transform: translateX(0) !important;
-                flex: none; 
-                width: auto;
-                @apply z-10;
-            }
-
-            #contact-panel {
-                @apply w-full border-r border-border-color;
-                flex-basis: 380px; 
-            }
-
-            #chat-panel {
-                @apply flex-grow;
-            }
-            
-            /* Desktop: Input area goes back to relative flow */
-            #chat-input-area {
-                position: relative !important;
-                bottom: auto !important;
-            }
-
-            /* Desktop Specific: Hide back button and always show content */
-            .chat-header-mobile-back { display: none !important; }
-            
-            /* The Empty state should take up the full height */
-            #chat-panel.empty-state {
-                @apply flex items-center justify-center;
-            }
-        }
         
+        /* FIX: Fixed Input Area on Mobile */
+        #chat-input-area {
+            position: absolute; 
+            bottom: 0;
+            width: 100%;
+        }
+
         /* --- Message Bubble Styling --- */
         .message {
-            /* Pop/Bounce Animation on Load */
             animation: fadeIn 0.3s ease-out;
             transform-origin: bottom;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -188,40 +139,32 @@
         }
 
         .message.sender {
-            /* Unique, modern bubble shape */
             border-radius: 1.25rem 1.25rem 0.375rem 1.25rem; 
         }
         
         .message.receiver {
-            /* Unique, modern bubble shape */
             border-radius: 1.25rem 1.25rem 1.25rem 0.375rem; 
         }
 
         /* Scrollbar styling for a cleaner look */
-        #chat-message-container::-webkit-scrollbar {
+        #chat-message-container::-webkit-scrollbar, #user-container::-webkit-scrollbar {
             width: 8px;
         }
-        #chat-message-container::-webkit-scrollbar-thumb {
+        #chat-message-container::-webkit-scrollbar-thumb, #user-container::-webkit-scrollbar-thumb {
             background-color: var(--color-border);
             border-radius: 10px;
         }
 
-        /* --- Touch Menu Styling (Revamped) --- */
+        /* --- Touch Menu Styling --- */
         .react-menu {
-            /* Use fixed position for proper touch menu behavior */
             position: fixed !important; 
             display: flex;
             flex-direction: column;
             padding: 0.75rem;
-            min-width: 280px; /* Set a minimum width for better appearance */
+            min-width: 280px; 
         }
         .react-menu .emoji-buttons button {
              @apply p-3 text-2xl bg-hover-bg rounded-full hover:scale-110 active:scale-90 transition-all;
-        }
-
-        /* Ensure textarea doesn't overflow its max height */
-        #chat-message-input {
-            line-height: 1.5; /* Ensure consistent line height */
         }
     </style>
 </head>
@@ -247,10 +190,10 @@
         </div>
     </div>
 
-    <div id="main-app" class="view-contacts" style="display: none;">
+    <div id="main-app" style="display: none;">
         
-        <div id="contact-panel" class="flex-col">
-            <div class="p-5 border-b border-border-color sticky top-0 bg-panel-bg z-50 shadow-sm">
+        <div id="contact-panel">
+            <div class="p-5 border-b border-border-color sticky top-0 bg-panel-bg z-50 shadow-sm flex-shrink-0">
                 <div id="profile-header" class="flex justify-between items-center mb-4">
                     <h2 class="text-3xl font-bold text-text-main flex items-center">
                         <i data-lucide="messages-square" class="w-7 h-7 mr-2 text-primary"></i> Chats
@@ -274,19 +217,19 @@
                 </div>
         </div>
 
-        <div id="chat-panel" class="empty-state flex flex-col h-full relative">
+        <div id="chat-panel" class="empty-state">
             
             <div id="empty-message" class="flex items-center justify-center flex-grow text-center p-10">
                  <p class="text-xl text-text-muted italic flex flex-col items-center">
-                    <i data-lucide="arrow-left-circle" class="w-10 h-10 mb-4 text-primary opacity-50"></i>
+                    <i data-lucide="message-square-text" class="w-10 h-10 mb-4 text-primary opacity-50"></i>
                     👋 Select a contact to start an expressive conversation!
                  </p>
             </div>
 
-            <div id="chat-active-content" class="flex-col flex-grow h-full hidden">
+            <div id="chat-active-content" class="hidden">
                 
                 <div id="chat-header" class="p-4 border-b border-border-color flex items-center bg-panel-bg sticky top-0 z-50 shadow-md flex-shrink-0">
-                    <button class="chat-header-mobile-back text-2xl text-primary p-1 rounded-full hover:bg-hover-bg mr-2 active:scale-95" onclick="goBackToContacts()">
+                    <button class="text-2xl text-primary p-1 rounded-full hover:bg-hover-bg mr-2 active:scale-95" onclick="goBackToContacts()">
                         <i data-lucide="chevron-left" class="w-6 h-6"></i>
                     </button>
                     <div class="flex items-center gap-3">
@@ -295,7 +238,7 @@
                     </div>
                 </div>
                 
-                <div id="chat-message-container" class="flex-grow min-h-0 p-4 overflow-y-auto flex flex-col gap-4">
+                <div id="chat-message-container" class="p-4 overflow-y-auto flex flex-col gap-4">
                     </div>
 
                 <div id="chat-input-area" class="p-3 border-t border-border-color flex items-end gap-2 bg-panel-bg flex-shrink-0">
@@ -337,7 +280,6 @@
         });
         
         // --- FIREBASE CONFIG & INITIALIZATION (UNCHANGED) ---
-        // Global variables are automatically provided by the Canvas environment.
         const firebaseConfig = {
             apiKey: "AIzaSyDrTPRrIseMyXbmzXMNRniMoALQoq-IdZ0",
             authDomain: "chaticular.firebaseapp.com",
@@ -348,19 +290,16 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        // NOTE: storage is no longer needed since image upload was removed.
-        // const storage = firebase.storage(); 
 
         let currentChatUser = '';
         let currentMessageRef = null; 
         let unsubscribeChatListener = null;
 
-        // --- THEME MANAGEMENT (UNCHANGED LOGIC, UPDATED SELECTORS) ---
+        // --- THEME MANAGEMENT ---
         const body = document.body;
         const themeToggle = document.getElementById('theme-toggle');
 
         function updateThemeIcon() {
-            // Use Lucide Icons
             themeToggle.innerHTML = body.classList.contains('light-theme') 
                 ? '<i data-lucide="moon" class="w-6 h-6"></i>' 
                 : '<i data-lucide="sun" class="w-6 h-6"></i>';
@@ -384,7 +323,6 @@
         }
 
         // --- UTILITIES (UNCHANGED) ---
-
         const formatTimestamp = (timestamp) => {
             if (!timestamp) return '...';
             const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -408,58 +346,47 @@
 
         function autoResizeTextarea() {
             const textarea = document.getElementById("chat-message-input");
-            textarea.style.height = 'auto'; // Reset height
-            // Set to scrollHeight but cap at 100px (max-h-[100px] in Tailwind)
+            textarea.style.height = 'auto';
             const newHeight = Math.min(textarea.scrollHeight, 100); 
             textarea.style.height = newHeight + 'px';
         }
 
-        // --- VIEW MANAGEMENT (MODIFIED TO USE NEW STRUCTURE) ---
+        // --- VIEW MANAGEMENT (MOBILE SLIDING LOGIC) ---
         const mainApp = document.getElementById('main-app');
         const chatPanel = document.getElementById('chat-panel');
         const chatMessageContainer = document.getElementById("chat-message-container");
         
-        const isMobileView = () => window.matchMedia("(max-width: 767px)").matches;
+        function showView(isChatActive) {
+            // Toggles the 'view-chat' class to slide the panels (CSS handles the animation)
+            mainApp.classList.toggle('view-chat', isChatActive);
+            
+            // Toggles the visibility of the active chat content vs. the empty state message.
+            chatPanel.classList.toggle('empty-state', !isChatActive);
+            document.getElementById('chat-active-content').classList.toggle('hidden', !isChatActive);
+            document.getElementById('empty-message').classList.toggle('hidden', isChatActive);
 
-        function showView(viewName) {
-            const isChat = viewName === 'chat';
-
-            // 1. Mobile Transition Logic
-            if (isMobileView()) {
-                mainApp.classList.remove('view-chat', 'view-contacts');
-                mainApp.classList.add(isChat ? 'view-chat' : 'view-contacts');
-            } else {
-                // Desktop: Always show both panels
-                mainApp.classList.remove('view-chat', 'view-contacts');
-                mainApp.classList.add('view-contacts');
-            }
-
-            // 2. Content Visibility Logic (Toggling the empty state class)
-            chatPanel.classList.toggle('empty-state', !isChat);
-            document.getElementById('chat-active-content').classList.toggle('hidden', !isChat); // New content wrapper
-            document.getElementById('empty-message').classList.toggle('hidden', isChat);
-
-            if (isChat) {
+            if (isChatActive) {
                 // Scroll to bottom when showing chat view
                 setTimeout(() => chatMessageContainer.scrollTo({ top: chatMessageContainer.scrollHeight, behavior: 'instant' }), 100);
             }
         }
 
         function goBackToContacts() {
-            showView('contacts');
+            // Slides the chat panel back out and shows the contact list panel.
+            showView(false); 
             currentChatUser = '';
             if (unsubscribeChatListener) { 
                 unsubscribeChatListener(); 
                 unsubscribeChatListener = null; 
             }
-            // Remove active state from all contact items
+            // Reset active state
             document.querySelectorAll('.user-item').forEach(item => item.classList.remove('bg-primary/20', 'active'));
             document.getElementById('chat-username').textContent = '';
             document.getElementById('chat-avatar').textContent = 'U';
-            document.getElementById('react-menu').style.display = 'none'; // Hide menu on back
+            document.getElementById('react-menu').style.display = 'none';
         }
 
-        // --- AUTH & INITIALIZATION (UNCHANGED LOGIC) ---
+        // --- AUTH & INITIALIZATION (UNCHANGED) ---
 
         window.onload = () => {
             loadThemePreference();
@@ -479,7 +406,7 @@
             document.getElementById("main-app").style.display = "flex";
             document.getElementById("logged-in-as").textContent = `Logged in as: ${username}`;
             loadAllUsers();
-            showView('contacts');
+            showView(false); // Start on the contacts screen
         }
 
         function logout() {
@@ -546,7 +473,7 @@
             });
         }
 
-        // --- USER LIST & SEARCH (MODIFIED RENDER/STYLE) ---
+        // --- USER LIST & SEARCH ---
 
         function loadAllUsers() {
             const currentUser = localStorage.getItem('username');
@@ -591,7 +518,7 @@
             container.appendChild(userDiv);
         }
 
-        // --- CHAT CORE FUNCTIONS (MODIFIED sendChatMessage FOR NO IMAGE UPLOAD) ---
+        // --- CHAT CORE FUNCTIONS ---
 
         function startChat(username) {
             if (unsubscribeChatListener) {
@@ -609,7 +536,7 @@
             currentChatUser = username;
             document.getElementById("chat-username").textContent = username;
             document.getElementById("chat-avatar").textContent = getInitials(username);
-            showView('chat');
+            showView(true); // Show active chat
             loadChatMessages();
         }
 
@@ -619,10 +546,7 @@
             unsubscribeChatListener = db.collection("direct_messages").doc(username).collection(currentChatUser)
                 .orderBy("timestamp", "asc")
                 .onSnapshot((querySnapshot) => {
-                    // Check if scrolled near bottom before update
                     const wasScrolledToBottom = chatMessageContainer.scrollHeight - chatMessageContainer.scrollTop <= chatMessageContainer.clientHeight + 100;
-                    
-                    // Store current content before clearing
                     const oldContent = Array.from(chatMessageContainer.children).map(el => el.getAttribute('data-id'));
                     
                     chatMessageContainer.innerHTML = ""; 
@@ -634,12 +558,6 @@
                         messageDiv.classList.add("message", "max-w-[80%]", "py-3", "px-4", "relative", "cursor-pointer", "shadow-lg", "select-none");
                         messageDiv.classList.add(messageData.sender === username ? "sender" : "receiver", "text-base", "self-start", "transition-all");
 
-                        // Apply new message animation class if it's a new message
-                        if (!oldContent.includes(doc.id)) {
-                            messageDiv.classList.add('new-message'); 
-                        }
-
-                        // Apply sender/receiver specific colors and alignment
                         if (messageData.sender === username) {
                             messageDiv.classList.add("bg-bubble-self", "text-white", "ml-auto");
                         } else {
@@ -651,7 +569,6 @@
 
                         let contentHTML = messageData.content ? `<span class="message-content">${messageData.content}</span>` : '';
                         
-                        // Image Display Logic (kept in case old messages had images, but upload is removed)
                         if (messageData.imageUrl) {
                             const placeholder = 'https://placehold.co/200x150/2C2C30/A1A1AA?text=Image+Load+Fail';
                             contentHTML += `<img src="${messageData.imageUrl}" onerror="this.onerror=null;this.src='${placeholder}';" alt="Attached Image" class="max-w-full rounded-xl mt-1 block object-cover max-h-[250px] transition-all duration-300 hover:scale-[1.01] cursor-pointer"/>`;
@@ -659,7 +576,6 @@
                         
                         let reactionHTML = '';
                         if (messageData.reactions && Object.keys(messageData.reactions).length > 0) {
-                            // Simplified reaction mapping to only show emoji, count, and color (no Lucide icons in the pills)
                             const reactionColors = {
                                 '👍': 'text-blue-500',
                                 '❤️': 'text-red-500',
@@ -696,12 +612,9 @@
                         `;
                         
                         chatMessageContainer.appendChild(messageDiv);
-                        // Re-create icons for the new messages
-                        // NOTE: Only need to run if using Lucide in pills. Since we removed it, this is less critical but kept for other uses (send button).
                         lucide.createIcons(messageDiv); 
                     });
                     
-                    // Smooth scroll on new message or if already at bottom
                     if (wasScrolledToBottom || querySnapshot.docChanges().some(change => change.type === 'added')) {
                         setTimeout(() => chatMessageContainer.scrollTo({ top: chatMessageContainer.scrollHeight, behavior: 'smooth' }), 50);
                     }
@@ -715,28 +628,24 @@
             const message = messageInput.value.trim();
             const username = localStorage.getItem('username');
 
-            // Simplified check: only need content
             if (!message) {
-                // Animated error feedback
                 messageInput.classList.add('border-2', 'border-error', 'animate-pulse');
                 setTimeout(() => messageInput.classList.remove('border-2', 'border-error', 'animate-pulse'), 1000);
                 return;
             }
             
-            // Disable button and show loading state
             const sendButton = document.getElementById('send-btn');
-            sendButton.innerHTML = '<i data-lucide="loader-circle" class="w-6 h-6 animate-spin"></i>'; // Larger icon for larger button
+            sendButton.innerHTML = '<i data-lucide="loader-circle" class="w-6 h-6 animate-spin"></i>';
             lucide.createIcons(sendButton);
 
             const messageData = {
                 content: message,
                 sender: username,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                imageUrl: null, // Always null now
+                imageUrl: null,
                 reactions: {}
             };
             
-            // --- CORE FIRESTORE LOGIC ---
             const batch = db.batch();
             const newDocRef = db.collection("direct_messages").doc(username).collection(currentChatUser).doc();
             const receiverDocRef = db.collection("direct_messages").doc(currentChatUser).collection(username).doc(newDocRef.id);
@@ -748,12 +657,10 @@
                 messageInput.value = "";
                 autoResizeTextarea(); 
                 
-                // Restore button state
                 sendButton.innerHTML = '<i data-lucide="send" class="w-6 h-6 -translate-x-[1px]"></i>';
                 lucide.createIcons(sendButton);
             }).catch(error => {
                 console.error("Error sending message in batch: ", error);
-                // Restore button state
                 sendButton.innerHTML = '<i data-lucide="send" class="w-6 h-6 -translate-x-[1px]"></i>';
                 lucide.createIcons(sendButton);
             });
@@ -766,7 +673,7 @@
             }
         }
 
-        // --- MESSAGE CONTEXT (REACTIONS/DELETE) (REWRITTEN POSITIONING) ---
+        // --- MESSAGE CONTEXT (REACTIONS/DELETE) (UNCHANGED LOGIC) ---
 
         function showReactionMenu(event, messageId, messageSender) {
             event.stopPropagation();
@@ -778,53 +685,42 @@
 
             currentMessageRef = { id: messageId, sender: messageSender };
 
-            // Show/Hide delete button based on ownership
             deleteButton.style.display = (messageSender === currentUser) ? 'flex' : 'none';
 
-            // Reset menu position styles for recalculation
             menu.style.display = 'flex';
             menu.style.transform = 'none';
 
-            // 1. Calculate ideal position (centered above message)
-            let menuX = rect.left + (rect.width / 2); // Center of the message bubble
-            let menuY = rect.top; // Top edge of the message bubble
+            let menuX = rect.left + (rect.width / 2);
+            let menuY = rect.top;
 
             const menuWidth = menu.offsetWidth;
             const menuHeight = menu.offsetHeight;
-            const padding = 10; // Padding from screen edges
+            const padding = 10; 
 
-            // 2. Adjust X (Horizontal)
             let finalX = menuX - (menuWidth / 2);
 
-            // Left boundary check
             if (finalX < padding) {
                 finalX = padding;
             }
-            // Right boundary check
             else if (finalX + menuWidth > window.innerWidth - padding) {
                 finalX = window.innerWidth - menuWidth - padding;
             }
 
-            // 3. Adjust Y (Vertical) - Try above first
             let finalY = menuY - menuHeight - padding;
 
-            // Top boundary check: if it goes off screen top, move it below
             if (finalY < padding) {
                 finalY = rect.bottom + padding;
             }
 
-            // 4. Apply final position
             menu.style.left = `${finalX}px`;
             menu.style.top = `${finalY}px`;
             
-            // 5. Setup auto-hide on outside click
             const hideMenu = (e) => {
                 if (!menu.contains(e.target) && e.target !== event.currentTarget) {
                     menu.style.display = 'none';
                     document.removeEventListener('click', hideMenu);
                 }
             };
-            // Use setTimeout to allow the current click event to complete before setting up the listener
             setTimeout(() => document.addEventListener('click', hideMenu), 0);
         }
 
@@ -836,7 +732,6 @@
             const { id: messageId } = currentMessageRef;
             const username = localStorage.getItem('username');
 
-            // --- CORE FIRESTORE LOGIC (UNCHANGED) ---
             const docRefSender = db.collection("direct_messages").doc(username).collection(currentChatUser).doc(messageId);
             const docRefReceiver = db.collection("direct_messages").doc(currentChatUser).collection(username).doc(messageId);
 
@@ -865,7 +760,6 @@
                 return;
             }
 
-            // --- CORE FIRESTORE LOGIC (UNCHANGED) ---
             const docRefSender = db.collection("direct_messages").doc(currentUser).collection(currentChatUser).doc(messageId);
             const docRefReceiver = db.collection("direct_messages").doc(currentChatUser).collection(currentUser).doc(messageId);
 
